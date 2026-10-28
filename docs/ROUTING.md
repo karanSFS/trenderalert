@@ -28,6 +28,7 @@ Nav links use the `/#anchor` form so they work from any public page. `scroll-pad
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `/admin`                  | Server redirect to `/admin/dashboard`                                                                               |
 | `/admin/login`            | Demo sign-in. Outside the admin shell. Accepts `?next=/admin/...`                                                   |
+| `/admin/dashboard`        | Real dashboard page (Phase 4): `src/app/admin/(portal)/dashboard/page.tsx`                                          |
 | `/admin/*` (registered)   | Rendered inside the admin shell. Until a module is built, the catch-all shows a "scheduled for phase N" placeholder |
 | `/admin/*` (unregistered) | Admin 404 inside the shell                                                                                          |
 

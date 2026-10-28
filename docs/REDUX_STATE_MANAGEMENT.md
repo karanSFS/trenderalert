@@ -9,12 +9,14 @@
 
 ## Slices
 
-| Key      | File                               | State                                                                                                                                    |
-| -------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `auth`   | `features/auth/authSlice.ts`       | Current demo admin, session restored flag, sign-in status and error, role-switch status, demo account list with its own status and error |
-| `theme`  | `features/settings/themeSlice.ts`  | Preset, mode, restored flag                                                                                                              |
-| `layout` | `features/settings/layoutSlice.ts` | Sidebar collapsed                                                                                                                        |
-| `audit`  | `features/audit/auditSlice.ts`     | Demo audit events recorded this session (newest first), record status and error                                                          |
+| Key             | File                                           | State                                                                                                                                    |
+| --------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`          | `features/auth/authSlice.ts`                   | Current demo admin, session restored flag, sign-in status and error, role-switch status, demo account list with its own status and error |
+| `theme`         | `features/settings/themeSlice.ts`              | Preset, mode, restored flag                                                                                                              |
+| `layout`        | `features/settings/layoutSlice.ts`             | Sidebar collapsed                                                                                                                        |
+| `audit`         | `features/audit/auditSlice.ts`                 | Demo audit events recorded this session (newest first), record status and error                                                          |
+| `dashboard`     | `features/dashboard/dashboardSlice.ts`         | Selected range, summary, status, error, last loaded time, latest request id (older responses are ignored)                                |
+| `notifications` | `features/notifications/notificationsSlice.ts` | Alerts, status, error, ids read this session                                                                                             |
 
 Module slices (users, moderation, finance and so on) are added in later phases, one per domain. There is no single application-wide slice.
 

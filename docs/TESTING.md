@@ -46,6 +46,16 @@ No unit or component test runner is configured yet. The recommended setup when m
 1. Set `NEXT_PUBLIC_MOCK_DELAY_MS=2500` in `.env.local` and restart. Sign-in skeletons stay visible longer.
 2. Set `NEXT_PUBLIC_MOCK_FAIL_SERVICES=auth` and restart. The sign-in page shows "Demo accounts could not be loaded" with **Try again**.
 
+### Dashboard and alerts (Phase 4)
+
+1. As Super Administrator, `/admin/dashboard` shows 8 KPI cards, 5 charts and 5 panels. The bell shows 7 unread.
+2. Switch 7, 30 and 90 days: KPI values, the subtitle and charts change. **Refresh** shows a loading state, then clears.
+3. Switch to Finance Administrator: only finance, subscription and contest figures remain; the bell shows 2 alerts.
+4. Click a KPI card or a panel row: the related admin page opens.
+5. Open the bell, click an alert: it navigates and the unread count drops. **Mark all as read** clears the count.
+6. Change to a dark theme: charts, axes and legends recolor.
+7. Restart with `NEXT_PUBLIC_MOCK_FAIL_SERVICES=dashboard NEXT_PUBLIC_MOCK_DELAY_MS=2500`: skeletons appear, then "The dashboard could not be loaded" with **Try again**. The bell still loads because alerts use the `notifications` key.
+
 ### Navigation and 404
 
 1. Visit `/admin/users/u-1042`. Breadcrumbs show Home / Users / u-1042, and Users is highlighted in the sidebar.

@@ -38,6 +38,12 @@ export function formatCurrency(minorUnits: number | null | undefined, currency =
   return formatter.format(minorUnits / 100);
 }
 
+/** Compact US dollars from minor units: 4823000 -> "$48.2K". */
+export function formatCompactCurrency(minorUnits: number | null | undefined): string {
+  if (typeof minorUnits !== "number" || !Number.isFinite(minorUnits)) return "—";
+  return `$${compactFormatter.format(minorUnits / 100)}`;
+}
+
 /** Signed change label used with an arrow icon, e.g. 0.052 -> "+5.2%". */
 export function formatSignedPercent(ratio: number): string {
   const formatted = formatPercent(Math.abs(ratio));

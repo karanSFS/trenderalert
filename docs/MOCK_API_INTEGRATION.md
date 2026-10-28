@@ -52,6 +52,13 @@ Copy `.env.example` to `.env.local` and restart the dev server after changing va
 | `getDemoAccountForRole(role)`   | `DemoAdminAccount`   | Demo role switcher only                                              |
 | `restoreDemoSession(accountId)` | `DemoAdminAccount`   | Production would validate a server session instead                   |
 
+### DashboardService (Phase 4)
+
+| Method              | Returns            | Service key     | Notes                                                                                                                                                              |
+| ------------------- | ------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `getSummary(range)` | `DashboardSummary` | `dashboard`     | `range` is `7d`, `30d` or `90d`. KPIs include the previous-period value. Proposed endpoint: `GET /admin/dashboard/summary?range=…`, filtered by role on the server |
+| `getAlerts()`       | `DashboardAlert[]` | `notifications` | The demo returns every alert and the UI filters by `permission`. A real endpoint should return only the caller's alerts with read state                            |
+
 ### AuditService (Phase 3)
 
 | Method                 | Returns      | Notes                                                                                                                                                     |

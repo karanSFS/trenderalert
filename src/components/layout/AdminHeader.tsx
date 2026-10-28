@@ -22,6 +22,7 @@ import { getInitials } from "@/lib/formatters/text";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import type { AdminRole } from "@/types/auth";
 import { AdminBreadcrumbs } from "./AdminBreadcrumbs";
+import { NotificationBell } from "./NotificationBell";
 
 const Header = styled.header`
   position: sticky;
@@ -249,6 +250,7 @@ export function AdminHeader({ onOpenMobileNav }: AdminHeaderProps) {
       </Spacer>
       <Actions>
         <DemoTag>DEMO</DemoTag>
+        <NotificationBell />
         <ThemeSwitcher />
         {currentAdmin ? (
           <Dropdown

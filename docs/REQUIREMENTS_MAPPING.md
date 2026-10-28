@@ -27,18 +27,18 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 
 ## Shared admin components (Phase 3)
 
-| Requirement                                            | Components / helpers                                                      | Status      | Notes                                                                           |
-| ------------------------------------------------------ | ------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
-| Data tables with search, filters, sorting, pagination  | `DataTable`, `FilterBar`, `SearchInput`, `listState.ts`, `applyListQuery` | Partial     | Built and type-checked; browser verification with the first directory (Phase 5) |
-| Preserve filters and pagination during navigation      | `createListReducers` (query in Redux)                                     | Partial     | Pattern in place; applies as modules adopt it                                   |
-| Confirmation dialogs, required reasons for enforcement | `ConfirmDialog`                                                           | Partial     | Built; first use in Phase 5                                                     |
-| Form modals with validation                            | `FormModal`                                                               | Partial     | Built; first use in Phase 5                                                     |
-| Detail panels                                          | `DetailDrawer`, `DetailSection`, `DetailList`                             | Partial     | Built; first use in Phase 5                                                     |
-| KPI and chart cards                                    | `MetricCard`, `ChartCard`, `useChartTheme`                                | Partial     | Built; first use in Phase 4                                                     |
-| Action-level role restrictions                         | `Can`, `usePermission`, `RowActions`                                      | Partial     | Built; applied per module                                                       |
-| Demo audit events for simulated changes                | `audit` slice, `AuditService`                                             | Partial     | Built; modules dispatch after successful mutations                              |
-| Avoid skeleton flashing on fast operations             | `useDelayedFlag`                                                          | Done        | Used by `DataTable`, `MetricCard`, `ChartCard`                                  |
-| Header notification indicator                          | —                                                                         | Not started | Needs Phase 4 alert data                                                        |
+| Requirement                                            | Components / helpers                                                      | Status  | Notes                                                                           |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------- |
+| Data tables with search, filters, sorting, pagination  | `DataTable`, `FilterBar`, `SearchInput`, `listState.ts`, `applyListQuery` | Partial | Built and type-checked; browser verification with the first directory (Phase 5) |
+| Preserve filters and pagination during navigation      | `createListReducers` (query in Redux)                                     | Partial | Pattern in place; applies as modules adopt it                                   |
+| Confirmation dialogs, required reasons for enforcement | `ConfirmDialog`                                                           | Partial | Built; first use in Phase 5                                                     |
+| Form modals with validation                            | `FormModal`                                                               | Partial | Built; first use in Phase 5                                                     |
+| Detail panels                                          | `DetailDrawer`, `DetailSection`, `DetailList`                             | Partial | Built; first use in Phase 5                                                     |
+| KPI and chart cards                                    | `MetricCard`, `ChartCard`, `useChartTheme`                                | Done    | Used and browser-verified on the dashboard (Phase 4)                            |
+| Action-level role restrictions                         | `Can`, `usePermission`, `RowActions`                                      | Partial | Built; applied per module                                                       |
+| Demo audit events for simulated changes                | `audit` slice, `AuditService`                                             | Partial | Built; modules dispatch after successful mutations                              |
+| Avoid skeleton flashing on fast operations             | `useDelayedFlag`                                                          | Done    | Used by `DataTable`, `MetricCard`, `ChartCard`                                  |
+| Header notification indicator                          | `NotificationBell`, `notifications` slice                                 | Done    | Role-filtered demo alerts, unread count, mark read, navigation (Phase 4)        |
 
 ## Public website (Phase 2)
 
@@ -59,20 +59,33 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 
 ## Admin modules (Phases 4-6)
 
-| Area                            | Route(s)                                                     | Spec references                                    | Status                    |
-| ------------------------------- | ------------------------------------------------------------ | -------------------------------------------------- | ------------------------- |
-| Dashboard                       | `/admin/dashboard`                                           | Prompt section 10                                  | Not started (placeholder) |
-| Users                           | `/admin/users`, `/admin/users/[id]`                          | Prompt section 11; D-10 deletion grace             | Not started               |
-| Content                         | `/admin/content`                                             | CNT14-001 Trend vs Profile Post                    | Not started               |
-| Trends                          | `/admin/trends`                                              | CNT14-002 fixed 30-day max, no extension; RANK14-* | Not started               |
-| Moderation, appeals, copyright  | `/admin/moderation`, `/admin/appeals`, `/admin/copyright`    | Prompt section 13                                  | Not started               |
-| Contests                        | `/admin/contests`                                            | D-07, D-08; paid contests activation-gated         | Not started               |
-| Subscriptions and finance       | `/admin/subscriptions`, `/admin/finance/*`                   | D-05; reconciliation goal                          | Not started               |
-| Support                         | `/admin/support`                                             | Support agent limits                               | Not started               |
-| Discovery                       | `/admin/discovery`                                           | RANK14-001..004                                    | Not started               |
-| Configuration and feature flags | `/admin/configuration`, `/admin/configuration/feature-flags` | Activation-gated features                          | Not started               |
-| Admin users and audit logs      | `/admin/security/*`                                          | Super admin, all actions audited                   | Not started               |
-| Operations                      | `/admin/operations`                                          | SCL14-010 monitoring                               | Not started               |
+| Area                            | Route(s)                                                     | Spec references                                    | Status           |
+| ------------------------------- | ------------------------------------------------------------ | -------------------------------------------------- | ---------------- |
+| Dashboard                       | `/admin/dashboard`                                           | Prompt section 10                                  | Done (see below) |
+| Users                           | `/admin/users`, `/admin/users/[id]`                          | Prompt section 11; D-10 deletion grace             | Not started      |
+| Content                         | `/admin/content`                                             | CNT14-001 Trend vs Profile Post                    | Not started      |
+| Trends                          | `/admin/trends`                                              | CNT14-002 fixed 30-day max, no extension; RANK14-* | Not started      |
+| Moderation, appeals, copyright  | `/admin/moderation`, `/admin/appeals`, `/admin/copyright`    | Prompt section 13                                  | Not started      |
+| Contests                        | `/admin/contests`                                            | D-07, D-08; paid contests activation-gated         | Not started      |
+| Subscriptions and finance       | `/admin/subscriptions`, `/admin/finance/*`                   | D-05; reconciliation goal                          | Not started      |
+| Support                         | `/admin/support`                                             | Support agent limits                               | Not started      |
+| Discovery                       | `/admin/discovery`                                           | RANK14-001..004                                    | Not started      |
+| Configuration and feature flags | `/admin/configuration`, `/admin/configuration/feature-flags` | Activation-gated features                          | Not started      |
+| Admin users and audit logs      | `/admin/security/*`                                          | Super admin, all actions audited                   | Not started      |
+| Operations                      | `/admin/operations`                                          | SCL14-010 monitoring                               | Not started      |
+
+### Dashboard detail (Phase 4)
+
+| Requirement                                                                                                                                          | Implementation                                            | Status | Notes                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------- |
+| KPI cards: users, registrations, active Trends, pending moderation, active contests, premium subscriptions, transaction volume, financial exceptions | `DashboardScreen`, `MetricCard`, `selectVisibleKpis`      | Done   | Role-filtered; previous-period change; each links to its module                        |
+| Charts: registrations, Trend activity, moderation distribution, subscription distribution, transactions                                              | `components/dashboard/charts`                             | Done   | Trend activity shows active Trends per day; contest payouts omitted (activation-gated) |
+| Panels: recent activity, pending moderation, financial exceptions, system health, recent alerts                                                      | `panels/OperationalPanels.tsx`                            | Done   | Rows link to records; health is simulated                                              |
+| Date-range filtering                                                                                                                                 | `Segmented` 7/30/90 days, `dashboard.range`               | Done   | Presets only                                                                           |
+| Refresh                                                                                                                                              | `fetchDashboard`, stale-response guard                    | Done   |                                                                                        |
+| Loading, error, empty states                                                                                                                         | Skeletons, `ErrorState`, inline alert, panel empty states | Done   | Verified with forced failure                                                           |
+| Clearly labeled demo data                                                                                                                            | `DemoDataTag`, subtitle                                   | Done   |                                                                                        |
+| Mock data separate from UI                                                                                                                           | `data/mock/dashboard.ts`, `DashboardService`              | Done   | Deterministic seed and reference date                                                  |
 
 ## Quality (Phase 7)
 

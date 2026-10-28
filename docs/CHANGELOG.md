@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-10-28 — Phase 4: Dashboard and notification bell
+
+**Feature:** Working, role-aware admin dashboard and header alerts.
+
+**Main files affected**
+
+- Data and services: `src/data/mock/dashboard.ts`, `src/services/{contracts,mock}/dashboardService.ts`, `src/services/index.ts`
+- State: `src/features/dashboard/*`, `src/features/notifications/*`, `src/store/rootReducer.ts`
+- UI: `src/components/dashboard/DashboardScreen.tsx`, `charts/{DashboardCharts,index}.tsx`, `panels/{Panel,OperationalPanels,statusTones}`, `src/components/layout/{NotificationBell,AdminHeader}.tsx`
+- Route: `src/app/admin/(portal)/dashboard/page.tsx` (replaces the placeholder)
+- `src/lib/formatters/number.ts` (`formatCompactCurrency`)
+
+**Behavior added**
+
+- Eight KPI cards with previous-period comparison, links to modules, and role filtering.
+- Five lazily loaded, theme-aware charts with text summaries. The charts are registrations, active Trends, moderation categories, subscription plans, and charges versus refunds.
+- Five operational panels: pending moderation, financial exceptions, recent admin activity (including this session's demo audit events), recent alerts and simulated system health.
+- 7, 30 and 90 day range presets with Refresh. A stale-response guard prevents an older request from overwriting newer data.
+- Skeletons on first load, inline alert on refresh failure, full error state with retry, and per-panel empty states.
+- Header notification bell with role-filtered alerts, unread badge, mark read and mark all read, and navigation.
+- Deterministic 180-day mock series generated from a fixed seed and reference date (`DEMO_AS_OF`).
+
+**Adjustments made during verification**
+
+- "Trend activity" shows active Trends per day as a line chart. The planned new-versus-expired series overlapped almost exactly, and an area chart forced a zero baseline that flattened the trend.
+- Transaction buckets are daily for 7 and 30 days and weekly, aligned to the end of the range, for 90 days, so the latest bucket is never partial.
+- The active contests series was smoothed to avoid misleading percentage swings.
+
+**Documentation updated:** `features/dashboard.md` (new), `REQUIREMENTS_MAPPING.md`, `ROUTING.md`, `MOCK_DATA_GUIDE.md`, `MOCK_API_INTEGRATION.md`, `REDUX_STATE_MANAGEMENT.md`, `TESTING.md`, `features/shared-admin-components.md`.
+
+**Known limitations**
+
+- Data is static for the demo reference date. Demo mutations in other modules do not change dashboard figures, apart from audit events.
+- Alert read state lasts only for the session.
+- Linked module pages remain placeholders until Phases 5 and 6.
+
 ## 2026-10-28 — Phase 3: Shared admin components
 
 **Feature:** Reusable building blocks for admin modules.
