@@ -69,6 +69,21 @@ No unit or component test runner is configured yet. The recommended setup when m
 
 The mock service rules (eligibility, reasons, cross-module effects) were also checked with a temporary script calling the services directly.
 
+### Operational administration (Phase 6)
+
+1. **Contests:** the directory shows 14 contests. Open `ctst-301`: legal Pending, Approve disabled with "Legal and operations approvals are still outstanding." Open `ctst-304`: a paid-contest warning and Approve disabled. Approve `ctst-300` with a reason: status becomes Approved and the history updates.
+2. **Finance:** the overview shows 5 unresolved exceptions (matches the dashboard). On Transactions, request a refund for a settled purchase: a new pending negative record appears, the original keeps its amount and shows "Refunded by". A second refund is disabled.
+3. **Reconciliation:** start investigating `rec-2207`, then resolve it with a type and note: the history keeps every earlier entry plus the resolution. The dashboard's exception rows open the matching drawer.
+4. **Support:** contact details are masked. Resolve is disabled on unassigned cases. Assign to me, add a note, escalate with a reason. `sup-3318` (from the dashboard alert) opens escalated to Trust & Safety.
+5. **Discovery:** change a ranking weight so the total is 95%: an error shows and Save is disabled. Restore 100% and save: the version increases.
+6. **Configuration:** fixed settings are read-only; a Trend duration above 30 days cannot be selected. Create and end an announcement.
+7. **Feature flags:** "Paid contests" has no available change action, and every gate shows outstanding. Change "Trend Rooms" rollout with a reason.
+8. **Admin users:** your own row has role and status actions disabled. Invite with a non-demo email: validation error. MFA status shows for every account.
+9. **Audit logs:** actions from steps 1 to 8 appear marked "This session". Export is disabled with "Requires backend authorization". Filter by administrator, module and date.
+10. **Operations:** the "Simulated data" banner shows; acknowledge `inc-77`.
+11. **Roles:** Finance Administrator sees Contests (no actions), Subscriptions and Finance. Support Agent sees Support and Subscriptions. Contest Administrator can act on contests. Only Super Administrator sees Discovery, Configuration, Security and Operations.
+12. **Unknown routes:** `/admin/does-not-exist` shows the admin 404 (the placeholder page no longer exists).
+
 ### Navigation and 404
 
 1. Visit `/admin/users/u-1042`. Breadcrumbs show Home / Users / u-1042, and Users is highlighted in the sidebar.

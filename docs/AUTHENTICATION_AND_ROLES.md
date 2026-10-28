@@ -82,6 +82,31 @@ Two helpers enforce action-level UI restrictions (Phase 3):
 
 `RowActions` items accept a `permission` and are hidden when the role lacks it. Module screens (Phase 5 onward) use these for every `*:manage`, `*:act` and `*:decide` action. As with route checks, these restrictions are UI-only.
 
+Phase 6 action permissions:
+
+| Screen                                | View                     | Act                                    |
+| ------------------------------------- | ------------------------ | -------------------------------------- |
+| Contests                              | `contests:view`          | `contests:manage`                      |
+| Subscriptions                         | `subscriptions:view`     | None (store-managed, read-only)        |
+| Finance, transactions, reconciliation | `finance:view`           | `finance:manage`                       |
+| Support                               | `support:view`           | `support:manage`                       |
+| Discovery                             | `discovery:view`         | `discovery:manage`                     |
+| Configuration, feature flags          | `configuration:view`     | `configuration:manage`                 |
+| Admin users                           | `security:manage-admins` | `security:manage-admins`               |
+| Audit logs                            | `audit:view`             | None (append-only; export disabled)    |
+| Operations                            | `operations:view`        | Acknowledge incident (same permission) |
+
+## Administrator accounts (Phase 6)
+
+The Admin users screen lists the five demo sign-in accounts plus fictional colleagues, with role, status and MFA status. Rules shown in the demo and expected from the backend:
+
+- Administrators cannot change their own role or deactivate themselves.
+- At least one active Super Administrator must remain.
+- Invitations record an invited account only; no email is sent, and demo invites must use the fictional `@demo.trenderalert.test` domain.
+- MFA is displayed as a status. No passwords, tokens or MFA secrets exist anywhere in the frontend.
+
+Changing a role here does not change what the demo sign-in accounts can do; the role switcher still controls the current demo session.
+
 ## Production authentication requirements
 
 Before production use, the backend must provide:

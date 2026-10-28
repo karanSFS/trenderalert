@@ -20,7 +20,7 @@ src/app/
       loading.tsx            Page skeleton during navigation
       error.tsx              Admin error boundary with retry
       not-found.tsx          Admin 404 rendered inside the shell
-      [...slug]/page.tsx     Temporary placeholder for registered modules not built yet
+      [...slug]/page.tsx     Catch-all that returns the admin 404 for unknown paths
 ```
 
 Route groups keep the two experiences fully separate. The public site never renders the admin sidebar, and the admin portal never inherits the public header.
@@ -71,7 +71,7 @@ Components never import mock datasets. They dispatch thunks and read typed selec
 
 ## Shared configuration
 
-- `lib/constants/adminRoutes.ts` is the single registry of admin routes. It drives breadcrumbs, page titles, the placeholder page and route-level permission checks.
+- `lib/constants/adminRoutes.ts` is the single registry of admin routes. It drives breadcrumbs, page titles and route-level permission checks.
 - `lib/constants/adminNavigation.tsx` groups registry entries into sidebar sections with icons.
 - `lib/constants/roles.ts` holds the role labels and the permission map.
 

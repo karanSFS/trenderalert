@@ -2,7 +2,7 @@
 
 ## Where mock data lives
 
-`src/data/mock/` contains one file per entity type, re-exported from `src/data/mock/index.ts`. Only the mock services in `src/services/mock/` may import it. Components and slices never import mock data.
+`src/data/mock/` contains one file per entity type, re-exported from `src/data/mock/index.ts`. Only the mock services in `src/services/mock/` may import it. Components and slices never import mock data; reference lists such as support agents come through services (`useLookup`). Known exceptions to clean up: `DEMO_AS_OF` from `seed.ts` (a constant used for relative dates) and `MODERATION_REVIEWERS` in `useCaseActions` (Phase 5).
 
 | File            | Entity                                                                                              | Phase |
 | --------------- | --------------------------------------------------------------------------------------------------- | ----- |
@@ -16,7 +16,15 @@
 | `moderation.ts` | 119 `ModerationCase` records (`mod-0929`…`mod-1047`) | 5 |
 | `appeals.ts` | 15 `Appeal` records (`app-0400`…`app-0414`) | 5 |
 | `copyright.ts` | 12 `CopyrightCase` records (`cpy-110`…`cpy-121`) | 5 |
-| `auditHistory.ts` | Seeded `AuditEvent` history derived from case outcomes and Trend history | 5 |
+| `auditHistory.ts` | Seeded `AuditEvent` history derived from case outcomes and Trend history, plus Phase 6 operational events | 5, 6 |
+| `contests.ts` | 14 `Contest` records (`ctst-288`…`ctst-304`) with generated entries and disputes | 6 |
+| `subscriptions.ts` | 26 `Subscription` records (`sub-<user number>`) and 65 ledger `Transaction` records (`txn-50001`…) | 6 |
+| `reconciliation.ts` | 11 `ReconciliationRecord` records (`rec-2196`…`rec-2207`) linked to transactions | 6 |
+| `supportCases.ts` | 34 `SupportCase` records (`sup-3301`…`sup-3334`), support agents, `maskEmail` | 6 |
+| `discovery.ts` | `DiscoveryConfig`: markets, featured locations, sources, freshness, relevance, ranking proposal | 6 |
+| `configuration.ts` | `ConfigurationData`: settings, announcements, policy versions, feature flags with gates | 6 |
+| `adminDirectory.ts` | 11 `AdminAccount` records (the five demo sign-ins plus colleagues) | 6 |
+| `operations.ts` | Simulated operations snapshot (objectives, queues, incidents, maintenance) | 6 |
 
 ### Relationships (Phase 5)
 
@@ -48,7 +56,15 @@ Time series are generated, not hand-written, but remain deterministic:
 - Breakdowns (moderation categories, subscription plans) are weights that the service splits with largest-remainder rounding, so the parts always add up to the KPI total.
 - Record ids in panels (`mod-1047`, `rec-2207`, `ctst-301`, `sup-3318`) are reserved for the matching module datasets in Phases 5 and 6, which must reuse them.
 
-Planned files (users, content, trends, moderation, appeals, contests, subscriptions, transactions, reconciliation, support cases, discovery, feature flags, audit logs, dashboard) are added with their modules.
+### Operational data (Phase 6)
+
+- Four contests are active (dashboard KPI). `ctst-301` awaits legal review; `ctst-300` is the only contest with every approval recorded; `ctst-302` and `ctst-304` are paid and stay blocked.
+- Transactions are generated with subscriptions using illustrative demo prices (`DEMO_PRICE_CENTS`); store prices are configured remotely (D-05). Refunds and chargebacks are separate negative records linked by `relatedTransactionId`.
+- `rec-2203` to `rec-2207` are unresolved (5, the dashboard KPI) with the dashboard's types, providers and amounts; `rec-2201` was resolved by Marcus Bell at 2026-10-27 19:15 UTC. When the database loads, transactions linked to unresolved exceptions are marked `exception`.
+- `sup-3318` was escalated to Trust & Safety by Priya Natarajan at 13:27 UTC. Contact details are stored pre-masked.
+- "Trend Rooms" is on at 50% of a test market; `paid_contests` is off with six outstanding gates.
+- Operations values match the dashboard health panel; backlog counts are computed from the demo database.
+- The audit service appends every recorded demo event to `db.auditHistory`, so the audit log shows seeded history and session actions together.
 
 ## TypeScript types
 
@@ -70,4 +86,4 @@ Every entity has an interface. Shared types live in `src/types/`; domain types i
 
 ## How demo operations update state
 
-Mock services return deep clones (`structuredClone`), so the source arrays are never mutated. Demo mutations update Redux state through reducers. A page refresh therefore resets demo changes, which keeps the demo repeatable.
+Mock services change only the in-memory database (`db.ts`) and return deep clones (`structuredClone`), so the seeded arrays are never mutated. Redux reducers then upsert the returned records. A page refresh therefore resets demo changes, which keeps the demo repeatable.

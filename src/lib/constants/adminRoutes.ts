@@ -31,8 +31,6 @@ export interface AdminRouteDefinition {
   label: string;
   description: string;
   permission: Permission;
-  /** Implementation phase from the master specification; used by the interim placeholder. */
-  phase: number;
   parent?: AdminRouteKey;
 }
 
@@ -47,7 +45,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Dashboard",
     description: "Platform status at a glance using demo metrics.",
     permission: "dashboard:view",
-    phase: 4,
   },
   operations: {
     key: "operations",
@@ -55,7 +52,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Operations",
     description: "Service health, queues and operational alerts.",
     permission: "operations:view",
-    phase: 6,
   },
   users: {
     key: "users",
@@ -63,7 +59,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Users",
     description: "Search accounts and apply authorized status changes.",
     permission: "users:view",
-    phase: 5,
   },
   userDetail: {
     key: "userDetail",
@@ -71,7 +66,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "User details",
     description: "Profile, status, subscription, moderation and audit history.",
     permission: "users:view",
-    phase: 5,
     parent: "users",
   },
   content: {
@@ -80,7 +74,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Content",
     description: "Trends and Profile Posts with visibility and moderation status.",
     permission: "content:view",
-    phase: 5,
   },
   trends: {
     key: "trends",
@@ -88,7 +81,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Trends",
     description: "TrendScore, lifecycle, geographic scope and authorized trend actions.",
     permission: "trends:view",
-    phase: 5,
   },
   discovery: {
     key: "discovery",
@@ -96,7 +88,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Discovery",
     description: "Markets, featured locations, freshness and ranking configuration.",
     permission: "discovery:view",
-    phase: 6,
   },
   moderation: {
     key: "moderation",
@@ -104,7 +95,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Moderation queue",
     description: "Review reports, assign reviewers and apply policy actions.",
     permission: "moderation:view",
-    phase: 5,
   },
   moderationDetail: {
     key: "moderationDetail",
@@ -112,7 +102,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Case details",
     description: "Report details, related content, notes and case history.",
     permission: "moderation:view",
-    phase: 5,
     parent: "moderation",
   },
   appeals: {
@@ -121,7 +110,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Appeals",
     description: "Review original decisions and record appeal outcomes.",
     permission: "appeals:view",
-    phase: 5,
   },
   copyright: {
     key: "copyright",
@@ -129,7 +117,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Copyright",
     description: "Notices, affected content, deadlines and resolution history.",
     permission: "copyright:view",
-    phase: 5,
   },
   contests: {
     key: "contests",
@@ -137,7 +124,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Contests",
     description: "Contest approval, rules, entries, disputes and payout status.",
     permission: "contests:view",
-    phase: 6,
   },
   contestDetail: {
     key: "contestDetail",
@@ -145,7 +131,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Contest details",
     description: "Approval states, eligibility, prizes and entries.",
     permission: "contests:view",
-    phase: 6,
     parent: "contests",
   },
   subscriptions: {
@@ -154,7 +139,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Subscriptions",
     description: "Provider, renewal and entitlement status.",
     permission: "subscriptions:view",
-    phase: 6,
   },
   finance: {
     key: "finance",
@@ -162,7 +146,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Finance overview",
     description: "Simulated transaction volume and financial exceptions.",
     permission: "finance:view",
-    phase: 6,
   },
   financeTransactions: {
     key: "financeTransactions",
@@ -170,7 +153,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Transactions",
     description: "Transactions, refunds and chargebacks (demo data).",
     permission: "finance:view",
-    phase: 6,
     parent: "finance",
   },
   financeReconciliation: {
@@ -179,7 +161,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Reconciliation",
     description: "Internal records versus provider references and exceptions.",
     permission: "finance:view",
-    phase: 6,
     parent: "finance",
   },
   support: {
@@ -188,7 +169,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Support cases",
     description: "Case directory, assignment, notes and escalation.",
     permission: "support:view",
-    phase: 6,
   },
   configuration: {
     key: "configuration",
@@ -196,7 +176,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Platform settings",
     description: "Announcements, policy versions and approved settings.",
     permission: "configuration:view",
-    phase: 6,
   },
   featureFlags: {
     key: "featureFlags",
@@ -204,7 +183,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Feature flags",
     description: "Owner-controlled flags, including activation-gated features.",
     permission: "configuration:view",
-    phase: 6,
     parent: "configuration",
   },
   adminUsers: {
@@ -213,7 +191,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Admin users",
     description: "Administrator accounts and role assignments.",
     permission: "security:manage-admins",
-    phase: 6,
   },
   auditLogs: {
     key: "auditLogs",
@@ -221,7 +198,6 @@ export const ADMIN_ROUTES: Record<AdminRouteKey, AdminRouteDefinition> = {
     label: "Audit logs",
     description: "Recorded administrative actions.",
     permission: "audit:view",
-    phase: 6,
   },
 };
 

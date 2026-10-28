@@ -17,7 +17,8 @@ export type AuditTargetType =
   | "discovery"
   | "configuration"
   | "featureFlag"
-  | "adminUser";
+  | "adminUser"
+  | "incident";
 
 /** A simulated administrative action. Never a real audit record. */
 export interface AuditEvent {

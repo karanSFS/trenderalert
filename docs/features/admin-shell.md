@@ -29,7 +29,7 @@ The shared frame for every admin page: sidebar navigation, header, breadcrumbs, 
 
 ### 5. Components
 
-`AdminLayout`, `AdminSidebar`, `AdminHeader`, `AdminBreadcrumbs`, `AdminShellSkeleton`, `AdminLoginScreen`, `ModulePlaceholder`, `AdminNotFound`, plus shared `BrandLogo`, `ThemeSwitcher`, `DemoModeBanner`, `AccessDeniedState`, `PageHeader`, `StatusBadge`, `EmptyState`, `PageSkeleton`.
+`AdminLayout`, `AdminSidebar`, `AdminHeader`, `AdminBreadcrumbs`, `AdminShellSkeleton`, `AdminLoginScreen`, `AdminNotFound`, plus shared `BrandLogo`, `ThemeSwitcher`, `DemoModeBanner`, `AccessDeniedState`, `PageHeader`, `StatusBadge`, `EmptyState`, `PageSkeleton`.
 
 ### 6. Redux state
 

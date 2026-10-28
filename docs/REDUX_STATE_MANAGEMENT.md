@@ -18,7 +18,13 @@
 | `dashboard`     | `features/dashboard/dashboardSlice.ts`         | Selected range, summary, status, error, last loaded time, latest request id (older responses are ignored)                                |
 | `notifications` | `features/notifications/notificationsSlice.ts` | Alerts, status, error, ids read this session                                                                                             |
 
-Module slices (users, moderation, finance and so on) are added in later phases, one per domain. There is no single application-wide slice.
+Module slices, one per domain (there is no single application-wide slice):
+
+| Key                                                                                                | Built with             | Phase |
+| -------------------------------------------------------------------------------------------------- | ---------------------- | ----- |
+| `users`, `content`, `trends`, `moderation`, `appeals`, `copyright`                                 | `createDirectorySlice` | 5     |
+| `contests`, `subscriptions`, `transactions`, `reconciliation`, `support`, `adminUsers`, `auditLog` | `createDirectorySlice` | 6     |
+| `discovery`, `configuration`, `operations`, `financeOverview`                                      | `createDocumentSlice`  | 6     |
 
 ## List state pattern
 
@@ -90,11 +96,35 @@ export const enforceUser = usersModule.createMutation<{
 }>("enforce", ({ id, action, reason }, actor) => usersService.enforce(id, action, reason, actor));
 ```
 
-Typed selectors for all modules are in `src/features/moduleSelectors.ts`. Screens use `useDirectoryList(selectors, fetchList, actions)` (fetches on query change and returns `FilterBar` and `DataTable` props) and `useDemoAction()` (success message, audit event, follow-up refetch).
+## Document slice factory (Phase 6)
+
+`src/store/createDocumentSlice.ts` serves modules backed by one document (a configuration or snapshot) instead of a paginated list. State is `{ data, status, error, save: { status, error, action } }`. It returns `fetchDocument(arg)` and `createSave(key, run)`; every save resolves to the full updated document, which replaces `data`.
+
+```ts
+export const configurationModule = createDocumentSlice<ConfigurationData>({
+  name: "configuration",
+  fetch: () => configurationService.get(),
+});
+
+export const updateFeatureFlag = configurationModule.createSave<{
+  key: string;
+  enabled: boolean;
+  rollout: number;
+  reason: string;
+}>("flag", ({ key, enabled, rollout, reason }, actor) =>
+  configurationService.updateFlag(key, { enabled, rollout }, reason, actor),
+);
+```
+
+The configuration page and the feature-flags page share the `configuration` slice. `financeOverview` takes the period in days as its fetch argument.
+
+Typed selectors for all modules are in `src/features/moduleSelectors.ts` (directory selectors plus `selectDiscovery`, `selectConfiguration`, `selectOperations`, `selectFinanceOverview`). Screens use `useDirectoryList(selectors, fetchList, actions)` (fetches on query change and returns `FilterBar` and `DataTable` props) and `useDemoAction()` (success message, audit event, follow-up refetch).
 
 ## Demo audit events
 
-After a simulated mutation succeeds, dispatch `recordDemoAuditEvent({ action, targetType, targetId, summary, reason })`. The thunk adds the signed-in demo admin as actor. Never record an event for a failed action. Use `makeSelectAuditEventsForTarget()` to show a record's recent demo history.
+After a simulated mutation succeeds, dispatch `recordDemoAuditEvent({ action, targetType, targetId, summary, reason })`. The thunk adds the signed-in demo admin as actor. Never record an event for a failed action. Use `makeSelectAuditEventsForTarget()` to show a record's recent demo history. Since Phase 6 the mock audit service also appends each event to the demo database, so the Audit logs page lists it.
+
+Small reference lists that are not module state (support agents for the assignee filter, administrators for the audit actor filter) are loaded with `useLookup(key, loader)`, which caches one request per page load.
 
 ## Async actions
 

@@ -8,6 +8,72 @@ const ACTORS: Record<string, { id: string; role: AdminRole }> = {
   "Avery Collins": { id: "adm-001", role: "super_admin" },
 };
 
+/** Seeded operational events that match the dashboard's recent admin activity. */
+const OPERATIONAL_EVENTS: AuditEvent[] = [
+  {
+    id: "aud-act-5107",
+    occurredAt: "2026-10-27T19:15:00Z",
+    actorId: "adm-004",
+    actorName: "Marcus Bell",
+    actorRole: "finance_admin",
+    action: "reconciliation.resolve",
+    targetType: "reconciliation",
+    targetId: "rec-2201",
+    summary: "Resolved reconciliation exception rec-2201 (amount mismatch)",
+    reason: "Store applied a regional price adjustment; recorded a linked adjustment entry.",
+    demo: true,
+  },
+  {
+    id: "aud-act-5106",
+    occurredAt: "2026-10-27T16:03:00Z",
+    actorId: "adm-001",
+    actorName: "Avery Collins",
+    actorRole: "super_admin",
+    action: "configuration.announcement.update",
+    targetType: "configuration",
+    targetId: "ann-31",
+    summary: 'Updated announcement "Scheduled maintenance window"',
+    demo: true,
+  },
+  {
+    id: "aud-act-5105",
+    occurredAt: "2026-10-27T13:27:00Z",
+    actorId: "adm-003",
+    actorName: "Priya Natarajan",
+    actorRole: "support_agent",
+    action: "support.escalate",
+    targetType: "supportCase",
+    targetId: "sup-3318",
+    summary: "Escalated support case sup-3318 to Trust & Safety",
+    reason: "Possible ban evasion; needs linked-account review.",
+    demo: true,
+  },
+  {
+    id: "aud-act-5104",
+    occurredAt: "2026-10-27T10:51:00Z",
+    actorId: "adm-005",
+    actorName: "Sofia Laurent",
+    actorRole: "contest_admin",
+    action: "contest.submit_for_review",
+    targetType: "contest",
+    targetId: "ctst-301",
+    summary: "Submitted contest ctst-301 for legal review",
+    demo: true,
+  },
+  {
+    id: "aud-flag-trend-rooms",
+    occurredAt: "2026-10-26T16:00:00Z",
+    actorId: "adm-001",
+    actorName: "Avery Collins",
+    actorRole: "super_admin",
+    action: "featureFlag.rollout",
+    targetType: "featureFlag",
+    targetId: "trend_rooms",
+    summary: 'Scheduled "Trend Rooms" rollout to 50% of a test market',
+    demo: true,
+  },
+];
+
 /** Historical (seeded) audit entries. Session demo actions are added on top at runtime. */
 function generateAuditHistory(): AuditEvent[] {
   const events: AuditEvent[] = [];
@@ -52,6 +118,7 @@ function generateAuditHistory(): AuditEvent[] {
     }
   }
 
+  events.push(...OPERATIONAL_EVENTS);
   return events.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 }
 

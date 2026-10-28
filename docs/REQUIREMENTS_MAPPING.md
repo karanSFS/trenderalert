@@ -66,13 +66,13 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 | Content                         | `/admin/content`                                                                    | CNT14-001 Trend vs Profile Post                    | Done (`features/content-management.md`)                       |
 | Trends                          | `/admin/trends`                                                                     | CNT14-002 fixed 30-day max, no extension; RANK14-* | Done (`features/trend-management.md`)                         |
 | Moderation, appeals, copyright  | `/admin/moderation`, `/admin/moderation/[id]`, `/admin/appeals`, `/admin/copyright` | Prompt section 13                                  | Done (`features/moderation.md`, `appeals.md`, `copyright.md`) |
-| Contests                        | `/admin/contests`                                                                   | D-07, D-08; paid contests activation-gated         | Not started                                                   |
-| Subscriptions and finance       | `/admin/subscriptions`, `/admin/finance/*`                                          | D-05; reconciliation goal                          | Not started                                                   |
-| Support                         | `/admin/support`                                                                    | Support agent limits                               | Not started                                                   |
-| Discovery                       | `/admin/discovery`                                                                  | RANK14-001..004                                    | Not started                                                   |
-| Configuration and feature flags | `/admin/configuration`, `/admin/configuration/feature-flags`                        | Activation-gated features                          | Not started                                                   |
-| Admin users and audit logs      | `/admin/security/*`                                                                 | Super admin, all actions audited                   | Not started                                                   |
-| Operations                      | `/admin/operations`                                                                 | SCL14-010 monitoring                               | Not started                                                   |
+| Contests                        | `/admin/contests`, `/admin/contests/[id]`                                           | D-07, D-08; paid contests activation-gated         | Done (`features/contests.md`)                                 |
+| Subscriptions and finance       | `/admin/subscriptions`, `/admin/finance/*`                                          | D-05; reconciliation goal                          | Done (`features/subscriptions.md`, `finance.md`)              |
+| Support                         | `/admin/support`                                                                    | Support agent limits                               | Done (`features/support.md`)                                  |
+| Discovery                       | `/admin/discovery`                                                                  | RANK14-001..004                                    | Done (`features/discovery.md`)                                |
+| Configuration and feature flags | `/admin/configuration`, `/admin/configuration/feature-flags`                        | Activation-gated features                          | Done (`features/configuration.md`)                            |
+| Admin users and audit logs      | `/admin/security/*`                                                                 | Super admin, all actions audited                   | Done (`features/security-and-audit.md`)                       |
+| Operations                      | `/admin/operations`                                                                 | SCL14-010 monitoring                               | Done (`features/operations.md`)                               |
 
 ### Dashboard detail (Phase 4)
 
@@ -86,6 +86,22 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 | Loading, error, empty states                                                                                                                         | Skeletons, `ErrorState`, inline alert, panel empty states | Done   | Verified with forced failure                                                           |
 | Clearly labeled demo data                                                                                                                            | `DemoDataTag`, subtitle                                   | Done   |                                                                                        |
 | Mock data separate from UI                                                                                                                           | `data/mock/dashboard.ts`, `DashboardService`              | Done   | Deterministic seed and reference date                                                  |
+
+### Operational administration detail (Phase 6)
+
+| Requirement                                                | Implementation                                                       | Status | Notes                                                                            |
+| ---------------------------------------------------------- | -------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
+| Paid-contest activation stays disabled                     | `contestActionBlock`, contests service, `paid_contests` flag gates   | Done   | Rejected in the UI and again in the service                                      |
+| Legal, payment-provider and operations approvals not faked | Read-only approval badges from mock data                             | Done   | Only `ctst-300` has every approval recorded                                      |
+| Refunds never overwrite transaction history                | `requestRefund` creates a linked record                              | Done   | Original keeps its amount; gains `refundedBy`                                    |
+| Reconciliation resolution keeps history                    | `resolveException` appends history and a resolution                  | Done   |                                                                                  |
+| Support sees limited personal data                         | Masked contact, privacy notice                                       | Done   | Masking must also be enforced by the backend                                     |
+| Settings limited to approved values                        | Editable vs fixed-by-policy settings                                 | Done   | 30-day maximum, 30-day deletion grace, ages 13 and 18, one warning, remote price |
+| Ranking weights validated                                  | Discovery ranking tab and service                                    | Done   | Must total 100%; labeled as a proposal                                           |
+| Admins cannot change or deactivate themselves; MFA shown   | Admin users screen and service                                       | Done   | One active Super Admin always remains                                            |
+| Audit log append-only, export disabled                     | Audit log screen; `auditService.record` appends to the demo database | Done   | Export shows "Requires backend authorization"                                    |
+| Operations data labeled simulated                          | Operations banner and subtitle                                       | Done   | Backlog counts come from demo records                                            |
+| Every admin route has a real page                          | `[...slug]` catch-all now returns 404                                | Done   | `ModulePlaceholder` removed                                                      |
 
 ## Quality (Phase 7)
 

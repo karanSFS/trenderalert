@@ -7,7 +7,18 @@ import { usePermission } from "@/features/auth/usePermission";
 import type { Permission } from "@/types/auth";
 import type { EntityId } from "@/types/common";
 
-export type EntityKind = "user" | "content" | "trend" | "case" | "appeal" | "copyright";
+export type EntityKind =
+  | "user"
+  | "content"
+  | "trend"
+  | "case"
+  | "appeal"
+  | "copyright"
+  | "contest"
+  | "subscription"
+  | "transaction"
+  | "reconciliation"
+  | "support";
 
 const TARGETS: Record<EntityKind, { permission: Permission; href: (id: EntityId) => string }> = {
   user: { permission: "users:view", href: (id) => `/admin/users/${id}` },
@@ -16,6 +27,20 @@ const TARGETS: Record<EntityKind, { permission: Permission; href: (id: EntityId)
   case: { permission: "moderation:view", href: (id) => `/admin/moderation/${id}` },
   appeal: { permission: "appeals:view", href: (id) => `/admin/appeals?open=${id}` },
   copyright: { permission: "copyright:view", href: (id) => `/admin/copyright?open=${id}` },
+  contest: { permission: "contests:view", href: (id) => `/admin/contests/${id}` },
+  subscription: {
+    permission: "subscriptions:view",
+    href: (id) => `/admin/subscriptions?open=${id}`,
+  },
+  transaction: {
+    permission: "finance:view",
+    href: (id) => `/admin/finance/transactions?open=${id}`,
+  },
+  reconciliation: {
+    permission: "finance:view",
+    href: (id) => `/admin/finance/reconciliation?open=${id}`,
+  },
+  support: { permission: "support:view", href: (id) => `/admin/support?open=${id}` },
 };
 
 const StyledLink = styled(Link)`

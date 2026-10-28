@@ -27,7 +27,7 @@ The portal exists to demonstrate realistic flows to the project manager. It is b
 src/
   app/                 Routes (public route group, admin, not-found, error)
   components/
-    admin/             Admin-only screens (module placeholder, admin 404)
+    admin/             Admin-only screens (admin 404)
     auth/              Demo sign-in screen
     layout/            Admin shell: layout, sidebar, header, breadcrumbs
     promotional/       Public header, footer and landing-page sections
@@ -55,7 +55,7 @@ See [ROUTING.md](ROUTING.md). In short: `/`, `/privacy`, `/terms`, `/support`, `
 - Demo sign-in has no passwords. Role checks are UI-only and provide no security.
 - The TrenderAlert logo is a **placeholder wordmark** until the owner supplies the original artwork.
 - Legal, privacy and support page copy are placeholders awaiting approved text.
-- Phases 1 and 2 are complete (foundation and public website). Admin module routes still show a "scheduled for phase N" placeholder.
+- Phases 1 to 6 are complete: foundation, public website, shared admin components, dashboard, core administration and operational administration. Every registered admin route has a real page.
 - The public product preview uses illustrative, fictional Trends and is labeled as such.
 - No automated test runner is configured yet (see [TESTING.md](TESTING.md)).
 

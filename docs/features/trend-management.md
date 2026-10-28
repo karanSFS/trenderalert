@@ -69,4 +69,4 @@ Proposed: `GET /admin/trends`, `GET /admin/trends/{id}`, `GET /admin/trends/{id}
 
 ### 16. Known limitations
 
-TrendScore values are illustrative. Ranking configuration is a Phase 6 discovery screen.
+TrendScore values are illustrative. Ranking weights are proposed on the Discovery screen (`features/discovery.md`).

@@ -120,7 +120,7 @@ export const RECENT_ADMIN_ACTIVITY: ActivityItem[] = [
     actorName: "Marcus Bell",
     actorRole: "finance_admin",
     summary: "Resolved reconciliation exception rec-2201 (amount mismatch)",
-    href: "/admin/finance/reconciliation",
+    href: "/admin/finance/reconciliation?open=rec-2201",
   },
   {
     id: "act-5106",
@@ -136,7 +136,7 @@ export const RECENT_ADMIN_ACTIVITY: ActivityItem[] = [
     actorName: "Priya Natarajan",
     actorRole: "support_agent",
     summary: "Escalated support case sup-3318 to Trust & Safety",
-    href: "/admin/support",
+    href: "/admin/support?open=sup-3318",
   },
   {
     id: "act-5104",
@@ -331,7 +331,7 @@ export const DASHBOARD_ALERTS: DashboardAlert[] = [
     title: "Support case escalated",
     description: "Case sup-3318 was escalated to Trust & Safety.",
     occurredAt: "2026-10-27T13:28:00Z",
-    href: "/admin/support",
+    href: "/admin/support?open=sup-3318",
     permission: "support:view",
   },
   {

@@ -24,41 +24,41 @@ Nav links use the `/#anchor` form so they work from any public page. `scroll-pad
 
 ## Admin routes
 
-| Route                                                                                                                                                       | Behavior                                                                                                            |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `/admin`                                                                                                                                                    | Server redirect to `/admin/dashboard`                                                                               |
-| `/admin/login`                                                                                                                                              | Demo sign-in. Outside the admin shell. Accepts `?next=/admin/...`                                                   |
-| `/admin/dashboard`                                                                                                                                          | Real dashboard page (Phase 4): `src/app/admin/(portal)/dashboard/page.tsx`                                          |
-| `/admin/users`, `/admin/users/[id]`, `/admin/content`, `/admin/trends`, `/admin/moderation`, `/admin/moderation/[id]`, `/admin/appeals`, `/admin/copyright` | Real module pages (Phase 5)                                                                                         |
-| `/admin/*` (registered)                                                                                                                                     | Rendered inside the admin shell. Until a module is built, the catch-all shows a "scheduled for phase N" placeholder |
-| `/admin/*` (unregistered)                                                                                                                                   | Admin 404 inside the shell                                                                                          |
+| Route                                                                                                                                                                                                                                                                                                                                     | Behavior                                                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `/admin`                                                                                                                                                                                                                                                                                                                                  | Server redirect to `/admin/dashboard`                                      |
+| `/admin/login`                                                                                                                                                                                                                                                                                                                            | Demo sign-in. Outside the admin shell. Accepts `?next=/admin/...`          |
+| `/admin/dashboard`                                                                                                                                                                                                                                                                                                                        | Real dashboard page (Phase 4): `src/app/admin/(portal)/dashboard/page.tsx` |
+| `/admin/users`, `/admin/users/[id]`, `/admin/content`, `/admin/trends`, `/admin/moderation`, `/admin/moderation/[id]`, `/admin/appeals`, `/admin/copyright`                                                                                                                                                                               | Real module pages (Phase 5)                                                |
+| `/admin/contests`, `/admin/contests/[id]`, `/admin/subscriptions`, `/admin/finance`, `/admin/finance/transactions`, `/admin/finance/reconciliation`, `/admin/support`, `/admin/discovery`, `/admin/configuration`, `/admin/configuration/feature-flags`, `/admin/security/admin-users`, `/admin/security/audit-logs`, `/admin/operations` | Real module pages (Phase 6)                                                |
+| `/admin/*` (anything else)                                                                                                                                                                                                                                                                                                                | Admin 404 inside the shell (the `[...slug]` catch-all calls `notFound()`)  |
 
 Registered admin routes (from `src/lib/constants/adminRoutes.ts`):
 
-| Key                   | Path                                 | Permission               | Phase |
-| --------------------- | ------------------------------------ | ------------------------ | ----- |
-| dashboard             | `/admin/dashboard`                   | `dashboard:view`         | 4     |
-| operations            | `/admin/operations`                  | `operations:view`        | 6     |
-| users                 | `/admin/users`                       | `users:view`             | 5     |
-| userDetail            | `/admin/users/[id]`                  | `users:view`             | 5     |
-| content               | `/admin/content`                     | `content:view`           | 5     |
-| trends                | `/admin/trends`                      | `trends:view`            | 5     |
-| discovery             | `/admin/discovery`                   | `discovery:view`         | 6     |
-| moderation            | `/admin/moderation`                  | `moderation:view`        | 5     |
-| moderationDetail      | `/admin/moderation/[id]`             | `moderation:view`        | 5     |
-| appeals               | `/admin/appeals`                     | `appeals:view`           | 5     |
-| copyright             | `/admin/copyright`                   | `copyright:view`         | 5     |
-| contests              | `/admin/contests`                    | `contests:view`          | 6     |
-| contestDetail         | `/admin/contests/[id]`               | `contests:view`          | 6     |
-| subscriptions         | `/admin/subscriptions`               | `subscriptions:view`     | 6     |
-| finance               | `/admin/finance`                     | `finance:view`           | 6     |
-| financeTransactions   | `/admin/finance/transactions`        | `finance:view`           | 6     |
-| financeReconciliation | `/admin/finance/reconciliation`      | `finance:view`           | 6     |
-| support               | `/admin/support`                     | `support:view`           | 6     |
-| configuration         | `/admin/configuration`               | `configuration:view`     | 6     |
-| featureFlags          | `/admin/configuration/feature-flags` | `configuration:view`     | 6     |
-| adminUsers            | `/admin/security/admin-users`        | `security:manage-admins` | 6     |
-| auditLogs             | `/admin/security/audit-logs`         | `audit:view`             | 6     |
+| Key                   | Path                                 | Permission               |
+| --------------------- | ------------------------------------ | ------------------------ |
+| dashboard             | `/admin/dashboard`                   | `dashboard:view`         |
+| operations            | `/admin/operations`                  | `operations:view`        |
+| users                 | `/admin/users`                       | `users:view`             |
+| userDetail            | `/admin/users/[id]`                  | `users:view`             |
+| content               | `/admin/content`                     | `content:view`           |
+| trends                | `/admin/trends`                      | `trends:view`            |
+| discovery             | `/admin/discovery`                   | `discovery:view`         |
+| moderation            | `/admin/moderation`                  | `moderation:view`        |
+| moderationDetail      | `/admin/moderation/[id]`             | `moderation:view`        |
+| appeals               | `/admin/appeals`                     | `appeals:view`           |
+| copyright             | `/admin/copyright`                   | `copyright:view`         |
+| contests              | `/admin/contests`                    | `contests:view`          |
+| contestDetail         | `/admin/contests/[id]`               | `contests:view`          |
+| subscriptions         | `/admin/subscriptions`               | `subscriptions:view`     |
+| finance               | `/admin/finance`                     | `finance:view`           |
+| financeTransactions   | `/admin/finance/transactions`        | `finance:view`           |
+| financeReconciliation | `/admin/finance/reconciliation`      | `finance:view`           |
+| support               | `/admin/support`                     | `support:view`           |
+| configuration         | `/admin/configuration`               | `configuration:view`     |
+| featureFlags          | `/admin/configuration/feature-flags` | `configuration:view`     |
+| adminUsers            | `/admin/security/admin-users`        | `security:manage-admins` |
+| auditLogs             | `/admin/security/audit-logs`         | `audit:view`             |
 
 ## Layout boundaries
 
@@ -68,16 +68,15 @@ Registered admin routes (from `src/lib/constants/adminRoutes.ts`):
 
 ## Navigation configuration
 
-- **Registry:** `ADMIN_ROUTES` defines path, label, description, permission, phase and optional parent for every admin route.
+- **Registry:** `ADMIN_ROUTES` defines path, label, description, permission and optional parent for every admin route.
 - **Sidebar:** `ADMIN_NAVIGATION` groups route keys into sections (Overview, Community, Trust & Safety, Contests & Finance, Support, Platform). `getNavigationForRole(role)` removes items the role cannot open and drops empty groups.
 - **Breadcrumbs:** `buildAdminBreadcrumbs(pathname)` walks the `parent` chain. Dynamic segments show the record id, for example Users / u-1042.
 - **Active state:** detail routes highlight their nearest ancestor in the navigation.
 
 ## Adding a module route
 
-1. Create `src/app/admin/(portal)/<path>/page.tsx`. It automatically takes precedence over the catch-all.
-2. Keep the route's entry in `ADMIN_ROUTES` (path, label, permission).
-3. When every registered route has a real page, delete `src/app/admin/(portal)/[...slug]/`.
+1. Add the route to `ADMIN_ROUTES` (path, label, permission, optional parent) and, if it belongs in the sidebar, to `ADMIN_NAVIGATION`.
+2. Create `src/app/admin/(portal)/<path>/page.tsx`. Without it, the path falls through to the `[...slug]` catch-all and shows the admin 404.
 
 ## Guards
 
@@ -97,4 +96,4 @@ Each directory keeps its query (search, filters, sort, page, page size) in its R
 
 ## Drawer deep links
 
-Content, Trends, Appeals and Copyright open their detail drawer from the `?open=<id>` query parameter (`useOpenParam`). `EntityLink` uses it to link records across modules, for example `/admin/content?open=trd-8841`. These pages render their screen inside `Suspense` because they read search params.
+Content, Trends, Appeals, Copyright, Subscriptions, Transactions, Reconciliation, Support, Admin users and Audit logs open their detail drawer from the `?open=<id>` query parameter (`useOpenParam`). `EntityLink` uses it to link records across modules, for example `/admin/content?open=trd-8841` or `/admin/finance/reconciliation?open=rec-2207`. Contests and moderation cases have full pages instead. These pages render their screen inside `Suspense` because they read search params.

@@ -80,11 +80,40 @@ Rules enforced by the mock services (and expected from the backend):
 
 Proposed endpoint shapes are listed in each feature document; none are final.
 
-### AuditService (Phase 3)
+### Operational services (Phase 6)
 
-| Method                 | Returns      | Notes                                                                                                                                                     |
-| ---------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `record(draft, actor)` | `AuditEvent` | Demo only. The mock generates the id and timestamp. In production the backend writes audit records as part of each action, and the client only reads them |
+Contracts live in `services/contracts/operationalServices.ts`.
+
+| Service                 | Key             | Methods beyond `list` / `get`                                                                             |
+| ----------------------- | --------------- | --------------------------------------------------------------------------------------------------------- |
+| `ContestsService`       | `contests`      | `lockRules`, `submitForReview`, `decide(id, decision, reason, actor)`, `setEntryStatus`, `resolveDispute` |
+| `SubscriptionsService`  | `subscriptions` | `getTransactions(id)` (read-only module)                                                                  |
+| `TransactionsService`   | `finance`       | `getContext(id)`, `getOverview(periodDays)`, `requestRefund(id, reason, actor)`                           |
+| `ReconciliationService` | `finance`       | `getContext(id)`, `investigate(id, actor)`, `resolve(id, type, note, actor)`                              |
+| `SupportService`        | `support`       | `listAgents()`, `assign`, `setStatus`, `addNote`, `escalate(id, team, reason, actor)`                     |
+| `AdminUsersService`     | `adminUsers`    | `invite`, `changeRole(id, role, reason, actor)`, `setActive(id, active, reason, actor)`                   |
+| `AuditLogService`       | `audit`         | `listActors()` (read-only module)                                                                         |
+
+Single-document services (no `list`):
+
+| Service                | Key             | Methods                                                                        |
+| ---------------------- | --------------- | ------------------------------------------------------------------------------ |
+| `DiscoveryService`     | `discovery`     | `get()`, `update(DiscoveryUpdate, actor)`                                      |
+| `ConfigurationService` | `configuration` | `get()`, `updateSettings`, `saveAnnouncement`, `endAnnouncement`, `updateFlag` |
+| `OperationsService`    | `operations`    | `getSnapshot()`, `acknowledgeIncident(id, actor)`                              |
+
+Single-document saves return the whole updated document. Additional rules:
+
+- `requestRefund` adds a new linked record and returns the original with `refundedBy` set; it never changes an existing amount.
+- `resolve` on reconciliation appends a history entry and a resolution; it rejects already resolved records.
+- `updateFlag` rejects enabling an activation-gated flag with outstanding gates and rejects rollout increases while any gate is outstanding. Gates themselves cannot be changed.
+- `ContestsService.decide("approve")` rejects paid contests, unlocked rules, unverified funding and outstanding legal or operations approvals.
+
+### AuditService (Phase 3, extended in Phase 6)
+
+| Method                 | Returns      | Notes                                                                                                                                                                                                |
+| ---------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `record(draft, actor)` | `AuditEvent` | Demo only. The mock generates the id and timestamp and appends the event to `db.auditHistory`. In production the backend writes audit records as part of each action, and the client only reads them |
 
 ### List queries (Phase 3)
 

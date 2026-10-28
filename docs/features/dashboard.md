@@ -119,5 +119,5 @@ Proposed, not defined:
 - All data is fictional and static for `DEMO_AS_OF`; the dashboard does not reflect demo mutations made in other modules except audit events in "Recent admin activity".
 - Range presets only; no custom date picker.
 - Alert read state lasts for the browser session.
-- Linked module pages are still placeholders until Phases 5 and 6.
+- Every linked module page exists (Phases 5 and 6). Exception and activity rows open the matching record.
 - The 90-day weekly transaction view starts with a 6-day bucket.

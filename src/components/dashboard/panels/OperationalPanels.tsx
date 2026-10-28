@@ -124,7 +124,7 @@ export function FinancialExceptionsPanel({
       <PanelList>
         {items.slice(0, limit).map((item) => (
           <li key={item.id}>
-            <PanelRow as={Link} href="/admin/finance/reconciliation">
+            <PanelRow as={Link} href={`/admin/finance/reconciliation?open=${item.id}`}>
               <RowMain>
                 <strong>{item.type}</strong>
                 <span>

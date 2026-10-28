@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-10-28 — Phase 6: Operational administration
+
+**Feature:** Contests, Subscriptions, Finance (overview, transactions, reconciliation), Support, Discovery, Configuration and feature flags, Admin users, Audit logs and Operations. Every registered admin route now has a real page.
+
+**Main files affected**
+
+- Data: `src/data/mock/{contests,subscriptions,reconciliation,supportCases,discovery,configuration,adminDirectory,operations}.ts`; `auditHistory.ts` gains the dashboard's operational events; `dashboard.ts` activity and alert links now open the exact record.
+- Services: `services/contracts/operationalServices.ts`; ten mock services (`contests`, `subscriptions`, `transactions`, `reconciliation`, `support`, `discovery`, `configuration`, `adminUsers`, `auditLog`, `operations`); `db.ts` holds the new datasets and `assertValid`; `auditService.record` appends to `db.auditHistory`.
+- State: `src/store/createDocumentSlice.ts`; slices in `src/features/{contests,subscriptions,finance,support,discovery,configuration,security,operations}/`; reducers registered; selectors in `moduleSelectors.ts`. `AuditTargetType` gains `incident`.
+- UI: `src/components/{contests,finance,support,discovery,configuration,security,operations}/*`; shared `ActionButtons`, `useLookup`, new `EntityLink` kinds, `lib/constants/operationalLabels.ts`.
+- Routes: `src/app/admin/(portal)/{contests,contests/[id],subscriptions,finance,finance/transactions,finance/reconciliation,support,discovery,configuration,configuration/feature-flags,security/admin-users,security/audit-logs,operations}`. The `[...slug]` catch-all now calls `notFound()`; `ModulePlaceholder` and the route registry's `phase` field were removed.
+
+**Behavior added**
+
+- Contests: directory and full page with read-only approvals, eligibility, prize and payout status, rules, entries, disputes and history. Lock rules, submit, approve (free contests with every approval recorded), request changes, cancel, review entries and resolve disputes. Paid contests are always blocked.
+- Finance: overview for 7, 30 or 90 days; append-only ledger where a refund request is a new linked record; reconciliation with investigation and resolution that appends history.
+- Subscriptions: read-only store status, entitlement and linked transactions.
+- Support: assignment, status changes, internal notes and escalation with masked contact details.
+- Discovery: markets, featured locations, sources, relevance radius and a ranking proposal that must total 100%.
+- Configuration: editable settings within approved limits, fixed-by-policy values, announcements and policy versions. Feature flags with read-only gates; `paid_contests` cannot be enabled.
+- Admin users with MFA status, invitations, role changes and deactivation (never yourself; one active Super Admin always remains). Append-only audit log with filters and disabled export.
+- Operations: simulated objectives, queues, incidents (acknowledge) and backlog counts from the demo records.
+- Ids stay consistent with the dashboard: 4 active contests, `ctst-301` awaiting legal review, 5 unresolved exceptions (`rec-2203` to `rec-2207`), `rec-2201` resolved by Marcus Bell, `sup-3318` escalated, "Trend Rooms" at 50% of a test market, 79 open moderation cases.
+
+**Verified**
+
+- Script against the mock services: 48 checks covering every rule above and the dashboard consistency (all passed).
+- Browser: every Phase 6 page as Super Administrator; contest gating (`ctst-304`, `ctst-301`); reconciliation and support deep links; ranking validation; self-protection on admin users; incident acknowledgement appearing in the audit log; Finance Administrator navigation, blocked audit log and view-only contests; admin 404; dark theme after reload; narrow (mobile) width; no dev-overlay issues.
+- `lint`, `typecheck`, `format:check` and `build`.
+
+**Documentation updated:**
+
+- New feature docs: `features/{contests,subscriptions,finance,support,discovery,configuration,security-and-audit,operations}.md`.
+- Updated: `REQUIREMENTS_MAPPING.md`, `ROUTING.md`, `MOCK_DATA_GUIDE.md`, `MOCK_API_INTEGRATION.md`, `REDUX_STATE_MANAGEMENT.md`, `AUTHENTICATION_AND_ROLES.md`, `SECURITY.md`, `TESTING.md`, `ARCHITECTURE.md`, `PROJECT_OVERVIEW.md`, `features/{admin-shell,dashboard,trend-management,shared-admin-components}.md`.
+
+**Known limitations**
+
+- Demo changes live in memory and reset on reload, including session audit entries.
+- No contest creation form, payout execution, exports, policy editor or real monitoring.
+- `useCaseActions` (Phase 5) still imports `MODERATION_REVIEWERS` from mock data directly.
+
 ## 2026-10-28 — Phase 5: Core administration
 
 **Feature:** Users, Content, Trends, Moderation, Appeals and Copyright modules, plus a hidden sidebar scrollbar.
