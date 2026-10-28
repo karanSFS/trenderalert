@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-10-28 — Phase 5: Core administration
+
+**Feature:** Users, Content, Trends, Moderation, Appeals and Copyright modules, plus a hidden sidebar scrollbar.
+
+**Main files affected**
+
+- Data: `src/data/mock/{seed,users,trends,content,moderation,appeals,copyright,auditHistory}.ts`; `dashboard.ts` now uses the shared seed module (its output is unchanged).
+- Services: `src/services/mock/db.ts` (in-memory demo database), six mock services, `services/contracts/{directory,moduleServices}.ts`, `services/index.ts`.
+- State: `src/store/createDirectorySlice.ts`; slices in `src/features/{users,content,trends,moderation,appeals,copyright}/`; `src/features/moduleSelectors.ts`; `listState.ts` (request guard, boolean toggles excluded from the filter count).
+- UI: `src/components/{users,content,trends,moderation,appeals,copyright}/*`; shared `useConfirm`, `Timeline`, `EntityLink`, `SectionCard`, `Identity`, `RecordState`; hooks `useDirectoryList`, `useDemoAction`, `useOpenParam`; `lib/constants/statusLabels.ts`. `DetailDrawer` actions moved into a toolbar.
+- Routes: `src/app/admin/(portal)/{users,users/[id],content,trends,moderation,moderation/[id],appeals,copyright}`.
+- `AdminSidebar.tsx`: the scrollbar is hidden and the menu still scrolls.
+
+**Behavior added**
+
+- Six directories with search, filters, sorting, pagination, empty states, and queries kept in Redux across navigation.
+- Users detail page with profile, safety, subscription, deletion status, moderation history and audit history. Moderation case page with assignment, notes, decision bar, prior cases and history.
+- Drawers for content, Trends, appeals and copyright, deep-linkable with `?open=`.
+- Simulated actions, each with a required reason where it is an enforcement, eligibility checks, success or error feedback, and a demo audit event:
+  - restrict, suspend and reinstate accounts;
+  - remove, limit and restore content;
+  - feature, suppress, end early, correct fields and merge Trends (no extension possible);
+  - dismiss, warn, remove or limit content, restrict or suspend accounts, and escalate cases;
+  - uphold or reverse appeals;
+  - verify evidence, remove content, restore content and reject copyright notices.
+- Cross-module consistency through the shared demo database. For example, suspending from a case suspends the user, and reversing an appeal restores the content.
+- Seeded data is consistent with the dashboard: 79 open cases with the same category split, and every referenced id exists.
+
+**Verified**
+
+- Browser: users directory, restrict flow with validation, user detail and audit history, Trend drawer, end early, and the moderation queue.
+- Script against the mock services: every cross-module effect and eligibility rule.
+- `lint`, `typecheck` and `build`.
+
+**Documentation updated:**
+
+- New feature docs: `features/{user-management,content-management,trend-management,moderation,appeals,copyright}.md`.
+- Updated: `REQUIREMENTS_MAPPING.md`, `ROUTING.md`, `MOCK_DATA_GUIDE.md`, `MOCK_API_INTEGRATION.md`, `REDUX_STATE_MANAGEMENT.md`, `TESTING.md` and `features/shared-admin-components.md`.
+
+**Known limitations**
+
+- Demo changes reset on refresh.
+- Dashboard figures do not change after demo actions.
+- There are no media previews.
+- Directories are samples (60 users, 60 Trends, 100 content items).
+
 ## 2026-10-28 — Phase 4: Dashboard and notification bell
 
 **Feature:** Working, role-aware admin dashboard and header alerts.

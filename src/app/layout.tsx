@@ -35,6 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable}`}
       data-theme="trenderalert"
       data-mode="light"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>

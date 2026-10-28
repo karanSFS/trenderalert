@@ -9,6 +9,36 @@
 | `adminUsers.ts` | `DemoAdminAccount` (one per admin role)                                                             | 1     |
 | `dashboard.ts`  | Daily metric records, breakdown weights, activity, pending cases, exceptions, system health, alerts | 4     |
 
+| `seed.ts` | Shared seeded random generator, `DEMO_AS_OF`, date helpers, fictional name and place pools | 5 |
+| `users.ts` | 60 `PlatformUser` records (`usr-1001`…`usr-1060`) | 5 |
+| `trends.ts` | 60 `TrendRecord` discovery records (`trd-8790`…`trd-8849`) | 5 |
+| `content.ts` | 100 `ContentItem` records (60 Trend posts, 40 Profile Posts `pst-22000`…`pst-22039`) | 5 |
+| `moderation.ts` | 119 `ModerationCase` records (`mod-0929`…`mod-1047`) | 5 |
+| `appeals.ts` | 15 `Appeal` records (`app-0400`…`app-0414`) | 5 |
+| `copyright.ts` | 12 `CopyrightCase` records (`cpy-110`…`cpy-121`) | 5 |
+| `auditHistory.ts` | Seeded `AuditEvent` history derived from case outcomes and Trend history | 5 |
+
+### Relationships (Phase 5)
+
+```mermaid
+flowchart LR
+  Users --> Content
+  Content -->|"same id for Trend posts"| Trends
+  Content --> Moderation
+  Users --> Moderation
+  Moderation --> Appeals
+  Content --> Copyright
+```
+
+- Every `creatorId`, `accountId`, `contentId` and `caseId` resolves to a seeded record (checked by script).
+- Content states are pre-assigned so seeded outcomes match: removed content has a remove case (or a copyright removal); restricted and suspended users have a matching case.
+- Open moderation cases equal the dashboard's pending KPI, with the same category split as the dashboard donut.
+- Ids referenced by the dashboard and alerts (`mod-1039`, `mod-1041`…`mod-1047`, `trd-8841`, `pst-22019`, `app-0412`, `cpy-118`, `usr-1044`, `usr-1045`) exist with matching values.
+
+### In-memory demo database
+
+`src/services/mock/db.ts` deep-clones every dataset once when the app loads. Mock services read and change only this copy, so a demo action in one module is visible in the others (for example, suspending from a case changes the user). Seeded arrays are never mutated, and a page refresh restores the seed. Report counts on users and content are derived from cases when the database loads.
+
 ### Generated series (`dashboard.ts`)
 
 Time series are generated, not hand-written, but remain deterministic:

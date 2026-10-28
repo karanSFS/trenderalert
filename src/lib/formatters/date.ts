@@ -44,7 +44,7 @@ export function formatDateTime(value: IsoDateString | Date | null | undefined): 
 }
 
 /**
- * Whole-day distance from `reference`, e.g. "Today", "3 days ago", "in 2 days".
+ * Calendar-day distance (UTC) from `reference`, e.g. "Today", "3 days ago", "in 2 days".
  * Pass an explicit reference so rendering stays deterministic.
  */
 export function formatRelativeDays(
@@ -54,7 +54,9 @@ export function formatRelativeDays(
   const date = toDate(value);
   const ref = toDate(reference);
   if (!date || !ref) return "—";
-  const days = Math.round((date.getTime() - ref.getTime()) / DAY_MS);
+  const utcDay = (value: Date) =>
+    Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate());
+  const days = Math.round((utcDay(date) - utcDay(ref)) / DAY_MS);
   if (days === 0) return "Today";
   if (days === -1) return "Yesterday";
   if (days === 1) return "Tomorrow";

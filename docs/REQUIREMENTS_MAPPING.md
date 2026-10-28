@@ -27,18 +27,18 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 
 ## Shared admin components (Phase 3)
 
-| Requirement                                            | Components / helpers                                                      | Status  | Notes                                                                           |
-| ------------------------------------------------------ | ------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------- |
-| Data tables with search, filters, sorting, pagination  | `DataTable`, `FilterBar`, `SearchInput`, `listState.ts`, `applyListQuery` | Partial | Built and type-checked; browser verification with the first directory (Phase 5) |
-| Preserve filters and pagination during navigation      | `createListReducers` (query in Redux)                                     | Partial | Pattern in place; applies as modules adopt it                                   |
-| Confirmation dialogs, required reasons for enforcement | `ConfirmDialog`                                                           | Partial | Built; first use in Phase 5                                                     |
-| Form modals with validation                            | `FormModal`                                                               | Partial | Built; first use in Phase 5                                                     |
-| Detail panels                                          | `DetailDrawer`, `DetailSection`, `DetailList`                             | Partial | Built; first use in Phase 5                                                     |
-| KPI and chart cards                                    | `MetricCard`, `ChartCard`, `useChartTheme`                                | Done    | Used and browser-verified on the dashboard (Phase 4)                            |
-| Action-level role restrictions                         | `Can`, `usePermission`, `RowActions`                                      | Partial | Built; applied per module                                                       |
-| Demo audit events for simulated changes                | `audit` slice, `AuditService`                                             | Partial | Built; modules dispatch after successful mutations                              |
-| Avoid skeleton flashing on fast operations             | `useDelayedFlag`                                                          | Done    | Used by `DataTable`, `MetricCard`, `ChartCard`                                  |
-| Header notification indicator                          | `NotificationBell`, `notifications` slice                                 | Done    | Role-filtered demo alerts, unread count, mark read, navigation (Phase 4)        |
+| Requirement                                            | Components / helpers                                                      | Status | Notes                                                                    |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------ |
+| Data tables with search, filters, sorting, pagination  | `DataTable`, `FilterBar`, `SearchInput`, `listState.ts`, `applyListQuery` | Done   | Used by six Phase 5 directories; browser-verified                        |
+| Preserve filters and pagination during navigation      | `createListReducers`, `createDirectorySlice`                              | Done   | Queries live in Redux per module                                         |
+| Confirmation dialogs, required reasons for enforcement | `ConfirmDialog`, `useConfirm`                                             | Done   | Every enforcement action requires a reason (verified)                    |
+| Form modals with validation                            | `FormModal`                                                               | Done   | Trend corrections, merges, case notes                                    |
+| Detail panels                                          | `DetailDrawer`, `DetailSection`, `DetailList`                             | Done   | Content, Trends, Appeals, Copyright drawers                              |
+| KPI and chart cards                                    | `MetricCard`, `ChartCard`, `useChartTheme`                                | Done   | Used and browser-verified on the dashboard (Phase 4)                     |
+| Action-level role restrictions                         | `Can`, `usePermission`, `RowActions`                                      | Done   | Applied in every Phase 5 module                                          |
+| Demo audit events for simulated changes                | `audit` slice, `AuditService`, `useDemoAction`                            | Done   | Recorded after every successful demo action                              |
+| Avoid skeleton flashing on fast operations             | `useDelayedFlag`                                                          | Done   | Used by `DataTable`, `MetricCard`, `ChartCard`                           |
+| Header notification indicator                          | `NotificationBell`, `notifications` slice                                 | Done   | Role-filtered demo alerts, unread count, mark read, navigation (Phase 4) |
 
 ## Public website (Phase 2)
 
@@ -59,20 +59,20 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 
 ## Admin modules (Phases 4-6)
 
-| Area                            | Route(s)                                                     | Spec references                                    | Status           |
-| ------------------------------- | ------------------------------------------------------------ | -------------------------------------------------- | ---------------- |
-| Dashboard                       | `/admin/dashboard`                                           | Prompt section 10                                  | Done (see below) |
-| Users                           | `/admin/users`, `/admin/users/[id]`                          | Prompt section 11; D-10 deletion grace             | Not started      |
-| Content                         | `/admin/content`                                             | CNT14-001 Trend vs Profile Post                    | Not started      |
-| Trends                          | `/admin/trends`                                              | CNT14-002 fixed 30-day max, no extension; RANK14-* | Not started      |
-| Moderation, appeals, copyright  | `/admin/moderation`, `/admin/appeals`, `/admin/copyright`    | Prompt section 13                                  | Not started      |
-| Contests                        | `/admin/contests`                                            | D-07, D-08; paid contests activation-gated         | Not started      |
-| Subscriptions and finance       | `/admin/subscriptions`, `/admin/finance/*`                   | D-05; reconciliation goal                          | Not started      |
-| Support                         | `/admin/support`                                             | Support agent limits                               | Not started      |
-| Discovery                       | `/admin/discovery`                                           | RANK14-001..004                                    | Not started      |
-| Configuration and feature flags | `/admin/configuration`, `/admin/configuration/feature-flags` | Activation-gated features                          | Not started      |
-| Admin users and audit logs      | `/admin/security/*`                                          | Super admin, all actions audited                   | Not started      |
-| Operations                      | `/admin/operations`                                          | SCL14-010 monitoring                               | Not started      |
+| Area                            | Route(s)                                                                            | Spec references                                    | Status                                                        |
+| ------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------- |
+| Dashboard                       | `/admin/dashboard`                                                                  | Prompt section 10                                  | Done (see below)                                              |
+| Users                           | `/admin/users`, `/admin/users/[id]`                                                 | Prompt section 11; D-10 deletion grace             | Done (`features/user-management.md`)                          |
+| Content                         | `/admin/content`                                                                    | CNT14-001 Trend vs Profile Post                    | Done (`features/content-management.md`)                       |
+| Trends                          | `/admin/trends`                                                                     | CNT14-002 fixed 30-day max, no extension; RANK14-* | Done (`features/trend-management.md`)                         |
+| Moderation, appeals, copyright  | `/admin/moderation`, `/admin/moderation/[id]`, `/admin/appeals`, `/admin/copyright` | Prompt section 13                                  | Done (`features/moderation.md`, `appeals.md`, `copyright.md`) |
+| Contests                        | `/admin/contests`                                                                   | D-07, D-08; paid contests activation-gated         | Not started                                                   |
+| Subscriptions and finance       | `/admin/subscriptions`, `/admin/finance/*`                                          | D-05; reconciliation goal                          | Not started                                                   |
+| Support                         | `/admin/support`                                                                    | Support agent limits                               | Not started                                                   |
+| Discovery                       | `/admin/discovery`                                                                  | RANK14-001..004                                    | Not started                                                   |
+| Configuration and feature flags | `/admin/configuration`, `/admin/configuration/feature-flags`                        | Activation-gated features                          | Not started                                                   |
+| Admin users and audit logs      | `/admin/security/*`                                                                 | Super admin, all actions audited                   | Not started                                                   |
+| Operations                      | `/admin/operations`                                                                 | SCL14-010 monitoring                               | Not started                                                   |
 
 ### Dashboard detail (Phase 4)
 

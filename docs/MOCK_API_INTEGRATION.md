@@ -59,6 +59,27 @@ Copy `.env.example` to `.env.local` and restart the dev server after changing va
 | `getSummary(range)` | `DashboardSummary` | `dashboard`     | `range` is `7d`, `30d` or `90d`. KPIs include the previous-period value. Proposed endpoint: `GET /admin/dashboard/summary?range=…`, filtered by role on the server |
 | `getAlerts()`       | `DashboardAlert[]` | `notifications` | The demo returns every alert and the UI filters by `permission`. A real endpoint should return only the caller's alerts with read state                            |
 
+### Module services (Phase 5)
+
+Contracts live in `services/contracts/directory.ts` (`DirectoryService<T, F>` with `list` and `get`, and `ActionActor`) and `services/contracts/moduleServices.ts`. Each mock uses its own service key, so `NEXT_PUBLIC_MOCK_FAIL_SERVICES` can fail one module at a time.
+
+| Service             | Key          | Methods beyond `list` / `get`                                                    |
+| ------------------- | ------------ | -------------------------------------------------------------------------------- |
+| `UsersService`      | `users`      | `getActivity(id)`, `enforce(id, action, reason, actor)`                          |
+| `ContentService`    | `content`    | `getContext(id)`, `moderate(id, action, reason, actor)`                          |
+| `TrendsService`     | `trends`     | `getContext(id)`, `setFeatured`, `setSuppressed`, `endEarly`, `correct`, `merge` |
+| `ModerationService` | `moderation` | `getContext(id)`, `assign`, `addNote`, `act(id, action, reason, actor)`          |
+| `AppealsService`    | `appeals`    | `getOriginalCase(id)`, `decide(id, outcome, reason, actor)`                      |
+| `CopyrightService`  | `copyright`  | `setEvidence(id, status, actor)`, `resolve(id, resolution, reason, actor)`       |
+
+Rules enforced by the mock services (and expected from the backend):
+
+- Eligibility errors use code `CONFLICT`; a missing or short reason uses `VALIDATION`; unknown ids use `NOT_FOUND`.
+- Every action returns the updated record, which the slice upserts.
+- Trend services never change `expiresAt`, `creatorId` or `publishedAt`.
+
+Proposed endpoint shapes are listed in each feature document; none are final.
+
 ### AuditService (Phase 3)
 
 | Method                 | Returns      | Notes                                                                                                                                                     |

@@ -24,13 +24,14 @@ Nav links use the `/#anchor` form so they work from any public page. `scroll-pad
 
 ## Admin routes
 
-| Route                     | Behavior                                                                                                            |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `/admin`                  | Server redirect to `/admin/dashboard`                                                                               |
-| `/admin/login`            | Demo sign-in. Outside the admin shell. Accepts `?next=/admin/...`                                                   |
-| `/admin/dashboard`        | Real dashboard page (Phase 4): `src/app/admin/(portal)/dashboard/page.tsx`                                          |
-| `/admin/*` (registered)   | Rendered inside the admin shell. Until a module is built, the catch-all shows a "scheduled for phase N" placeholder |
-| `/admin/*` (unregistered) | Admin 404 inside the shell                                                                                          |
+| Route                                                                                                                                                       | Behavior                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `/admin`                                                                                                                                                    | Server redirect to `/admin/dashboard`                                                                               |
+| `/admin/login`                                                                                                                                              | Demo sign-in. Outside the admin shell. Accepts `?next=/admin/...`                                                   |
+| `/admin/dashboard`                                                                                                                                          | Real dashboard page (Phase 4): `src/app/admin/(portal)/dashboard/page.tsx`                                          |
+| `/admin/users`, `/admin/users/[id]`, `/admin/content`, `/admin/trends`, `/admin/moderation`, `/admin/moderation/[id]`, `/admin/appeals`, `/admin/copyright` | Real module pages (Phase 5)                                                                                         |
+| `/admin/*` (registered)                                                                                                                                     | Rendered inside the admin shell. Until a module is built, the catch-all shows a "scheduled for phase N" placeholder |
+| `/admin/*` (unregistered)                                                                                                                                   | Admin 404 inside the shell                                                                                          |
 
 Registered admin routes (from `src/lib/constants/adminRoutes.ts`):
 
@@ -92,4 +93,8 @@ Registered admin routes (from `src/lib/constants/adminRoutes.ts`):
 
 ## Filter and pagination preservation
 
-Not applicable yet. Module pages in Phases 5 and 6 will keep list filters and pagination in their Redux slices so they survive navigation to detail pages and back.
+Each directory keeps its query (search, filters, sort, page, page size) in its Redux slice, so returning from a detail page restores the list exactly.
+
+## Drawer deep links
+
+Content, Trends, Appeals and Copyright open their detail drawer from the `?open=<id>` query parameter (`useOpenParam`). `EntityLink` uses it to link records across modules, for example `/admin/content?open=trd-8841`. These pages render their screen inside `Suspense` because they read search params.

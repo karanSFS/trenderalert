@@ -163,7 +163,7 @@ None added. `applyListQuery` operates on module datasets added in later phases.
 
 - `npm run lint`, `npm run typecheck`, `npm run build`.
 - During development, a temporary type-check file exercised every component and a list slice built with `createListReducers`, and a runtime script checked `applyListQuery` (search, filter, sort, page clamping), the list reducers (page reset, reset keeps page size) and the formatters. Both scratch files were removed.
-- `MetricCard`, `ChartCard`, `useChartTheme`, `useDelayedFlag` and `DemoDataTag` were verified in the browser in Phase 4 (dashboard), including loading, error, dark theme and mobile. The table, filter bar, dialogs and drawer are verified with the first directory in Phase 5.
+- `MetricCard`, `ChartCard`, `useChartTheme`, `useDelayedFlag` and `DemoDataTag` were verified in the browser in Phase 4 (dashboard), including loading, error, dark theme and mobile. The table, filter bar, row actions, confirm dialog, form modal and drawer were verified in the browser in Phase 5 (Users, Content, Trends). Phase 5 also added `useConfirm`, `Timeline`, `EntityLink`, `SectionCard`, `Identity`, `RecordState`, `useDirectoryList`, `useDemoAction` and `useOpenParam`, and moved drawer actions into a toolbar above the drawer content.
 
 ### 14. Files changed
 

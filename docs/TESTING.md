@@ -56,6 +56,19 @@ No unit or component test runner is configured yet. The recommended setup when m
 6. Change to a dark theme: charts, axes and legends recolor.
 7. Restart with `NEXT_PUBLIC_MOCK_FAIL_SERVICES=dashboard NEXT_PUBLIC_MOCK_DELAY_MS=2500`: skeletons appear, then "The dashboard could not be loaded" with **Try again**. The bell still loads because alerts use the `notifications` key.
 
+### Core administration (Phase 5)
+
+1. **Users:** search "ari", filter Status = Restricted, sort by Reports. Open a member, return: filters are kept. Restrict an active member: an empty reason is rejected, a valid one shows "restricted (demo only)", the row updates and the audit entry appears on the detail page and on the dashboard's "Recent admin activity".
+2. **Content:** filter Moderation = Removed; open a row (URL gets `?open=`); restore with a reason. From a user page, **View content** shows the creator chip.
+3. **Trends:** open a Trend; the expiration says "cannot be extended". End early (irreversible, button then disabled). Correct fields (expiration shown read-only). Merge into another active Trend.
+4. **Moderation:** the queue shows 79 open cases (matches the dashboard). Assign to me, add a note, then suspend the account on an account case: the user's status in Users becomes Suspended. Closed cases disable every decision.
+5. **Appeals:** reverse an appeal for removed content: the content shows Visible again.
+6. **Copyright:** removing content is disabled until evidence is verified; verify, then remove.
+7. **Roles:** Content Moderator can act in moderation, appeals, copyright and Trends but has no user enforcement buttons. Support Agent sees Users without action items. Contest Administrator sees Content without actions.
+8. **Failures:** start with `NEXT_PUBLIC_MOCK_FAIL_SERVICES=users`: the directory shows an error with retry, and actions keep their dialog open with the error.
+
+The mock service rules (eligibility, reasons, cross-module effects) were also checked with a temporary script calling the services directly.
+
 ### Navigation and 404
 
 1. Visit `/admin/users/u-1042`. Breadcrumbs show Home / Users / u-1042, and Users is highlighted in the sidebar.

@@ -60,6 +60,38 @@ const usersSlice = createSlice({
 - The list stores `ids`; records live once in `entities`, so detail views and lists share the same data.
 - Pages dispatch the fetch thunk whenever `list.query` changes.
 
+## Directory slice factory (Phase 5)
+
+`src/store/createDirectorySlice.ts` builds every module slice with the same shape:
+
+| Key        | Contents                                                                                 |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| `list`     | `ListState`: query, ids, total, status, error, `requestId` (older responses are ignored) |
+| `entities` | Every loaded record by id (shared by list, drawer and detail page)                       |
+| `detail`   | `{ id, status, error }` for the record being viewed                                      |
+| `context`  | `{ id, status, error, data }` for related data (history, linked records)                 |
+| `mutation` | `{ status, error, action }` for the latest action                                        |
+
+It returns `fetchList(query)`, `fetchOne(id)`, `fetchContext(id)`, `createMutation(key, run)` and `makeSelectors(selectState)`. Every mutation resolves to the updated record, which is upserted automatically. The signed-in demo admin is passed to the service as the actor.
+
+```ts
+export const usersModule = createDirectorySlice<PlatformUser, UserFilters, UserActivity>({
+  name: "users",
+  service: usersService,
+  initialFilters: { status: undefined, plan: undefined, verification: undefined },
+  list: { sortField: "registeredAt", sortOrder: "descend" },
+  getContext: (id) => usersService.getActivity(id),
+});
+
+export const enforceUser = usersModule.createMutation<{
+  id: string;
+  action: UserEnforcementAction;
+  reason: string;
+}>("enforce", ({ id, action, reason }, actor) => usersService.enforce(id, action, reason, actor));
+```
+
+Typed selectors for all modules are in `src/features/moduleSelectors.ts`. Screens use `useDirectoryList(selectors, fetchList, actions)` (fetches on query change and returns `FilterBar` and `DataTable` props) and `useDemoAction()` (success message, audit event, follow-up refetch).
+
 ## Demo audit events
 
 After a simulated mutation succeeds, dispatch `recordDemoAuditEvent({ action, targetType, targetId, summary, reason })`. The thunk adds the signed-in demo admin as actor. Never record an event for a failed action. Use `makeSelectAuditEventsForTarget()` to show a record's recent demo history.
