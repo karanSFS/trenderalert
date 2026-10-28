@@ -25,6 +25,21 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 | Demo mode clearly labeled                                           | `DemoModeBanner`, header DEMO tag, login copy      | —                               | Done    |                                                                     |
 | Documentation foundation                                            | `docs/`                                            | —                               | Done    |                                                                     |
 
+## Shared admin components (Phase 3)
+
+| Requirement                                            | Components / helpers                                                      | Status      | Notes                                                                           |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| Data tables with search, filters, sorting, pagination  | `DataTable`, `FilterBar`, `SearchInput`, `listState.ts`, `applyListQuery` | Partial     | Built and type-checked; browser verification with the first directory (Phase 5) |
+| Preserve filters and pagination during navigation      | `createListReducers` (query in Redux)                                     | Partial     | Pattern in place; applies as modules adopt it                                   |
+| Confirmation dialogs, required reasons for enforcement | `ConfirmDialog`                                                           | Partial     | Built; first use in Phase 5                                                     |
+| Form modals with validation                            | `FormModal`                                                               | Partial     | Built; first use in Phase 5                                                     |
+| Detail panels                                          | `DetailDrawer`, `DetailSection`, `DetailList`                             | Partial     | Built; first use in Phase 5                                                     |
+| KPI and chart cards                                    | `MetricCard`, `ChartCard`, `useChartTheme`                                | Partial     | Built; first use in Phase 4                                                     |
+| Action-level role restrictions                         | `Can`, `usePermission`, `RowActions`                                      | Partial     | Built; applied per module                                                       |
+| Demo audit events for simulated changes                | `audit` slice, `AuditService`                                             | Partial     | Built; modules dispatch after successful mutations                              |
+| Avoid skeleton flashing on fast operations             | `useDelayedFlag`                                                          | Done        | Used by `DataTable`, `MetricCard`, `ChartCard`                                  |
+| Header notification indicator                          | —                                                                         | Not started | Needs Phase 4 alert data                                                        |
+
 ## Public website (Phase 2)
 
 | Requirement                                                        | Status  | Notes                                                                           |

@@ -75,7 +75,12 @@ Each admin route declares a permission in `ADMIN_ROUTES`. The sidebar hides rout
 
 ## Action-level restrictions
 
-Not yet applicable. Module screens (Phase 5 onward) will hide or disable actions that require `*:manage`, `*:act` or `*:decide` permissions.
+Two helpers enforce action-level UI restrictions (Phase 3):
+
+- `usePermission(permission)` / `usePermissionChecker()` in `src/features/auth/usePermission.ts`.
+- `<Can permission="users:manage" fallback={...}>` in `src/components/auth/Can.tsx`.
+
+`RowActions` items accept a `permission` and are hidden when the role lacks it. Module screens (Phase 5 onward) use these for every `*:manage`, `*:act` and `*:decide` action. As with route checks, these restrictions are UI-only.
 
 ## Production authentication requirements
 

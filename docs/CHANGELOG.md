@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-10-28 — Phase 3: Shared admin components
+
+**Feature:** Reusable building blocks for admin modules.
+
+**Main files affected**
+
+- UI: `src/components/ui/{SearchInput,FilterBar,DataTable,RowActions,ConfirmDialog,FormModal,DetailDrawer,DemoDataTag}.tsx`, `LoadingSkeleton.tsx` (`TableSkeleton` `bare` option)
+- Dashboard: `src/components/dashboard/{MetricCard,ChartCard}.tsx`, `src/styles/chartTheme.ts`
+- Permissions: `src/features/auth/usePermission.ts`, `src/components/auth/Can.tsx`
+- State and services: `src/store/listState.ts`, `src/services/mock/query.ts`, `src/features/audit/*`, `src/services/{contracts,mock}/auditService.ts`, `src/services/index.ts`, `src/store/rootReducer.ts`
+- Utilities: `src/lib/hooks/useDelayedFlag.ts`, `src/lib/formatters/{date,number}.ts`, `src/lib/errors.ts`
+- `src/app/globals.css` (drawer max width), `package.json` (`dayjs` as a direct dependency)
+
+**Behavior added**
+
+- Directory table with delayed skeletons, refetch overlay, error with retry, empty state, controlled sort and pagination, and keyboard-accessible row clicks.
+- Search and declarative filter bar with active-filter count and reset.
+- Permission-filtered row action menus, plus `Can` and `usePermission` for action-level restrictions.
+- Confirmation dialog with a consequence list and required reason. The form modal validates input. Both stay open and show the error when an action fails.
+- Detail drawer with sections and label-value lists.
+- Metric and chart cards with demo tags and fixed heights. The chart theme follows the active preset and mode.
+- List-state helpers that keep queries in Redux, and a mock `applyListQuery` for search, filter, sort and pagination.
+- Shared `audit` slice and `recordDemoAuditEvent` thunk.
+- Deterministic date and number formatters.
+
+**Documentation updated:** `features/shared-admin-components.md` (new), `DESIGN_SYSTEM.md`, `REDUX_STATE_MANAGEMENT.md`, `MOCK_API_INTEGRATION.md`, `AUTHENTICATION_AND_ROLES.md`, `REQUIREMENTS_MAPPING.md`.
+
+**Known limitations**
+
+- No showcase page, by owner choice. Components are first verified in the browser in Phases 4 and 5.
+- No unit test runner. Integration was checked with temporary type-check and runtime scripts, which were then removed.
+- The header notification indicator is deferred to Phase 4.
+
 ## 2026-10-28 — Phase 2: Promotional website
 
 **Feature:** Full public landing page at `/`.

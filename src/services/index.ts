@@ -1,4 +1,6 @@
+import type { AuditService } from "./contracts/auditService";
 import type { AuthService } from "./contracts/authService";
+import { mockAuditService } from "./mock/auditService";
 import { mockAuthService } from "./mock/authService";
 
 /**
@@ -6,3 +8,4 @@ import { mockAuthService } from "./mock/authService";
  * so a backend implementation can be swapped in without touching slices or components.
  */
 export const authService: AuthService = mockAuthService;
+export const auditService: AuditService = mockAuditService;

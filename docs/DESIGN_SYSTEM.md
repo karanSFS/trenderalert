@@ -25,7 +25,30 @@ The design system builds on Ant Design, customized through the theme tokens in [
 | `DemoModeBanner`                                                                                          | `components/ui/DemoModeBanner.tsx`  | Persistent demo notice in the admin shell                                                  |
 | `ThemeSwitcher`                                                                                           | `components/ui/ThemeSwitcher.tsx`   | Appearance mode and preset selection                                                       |
 
-Plain antd `Button` is used directly; a wrapper was not added because it would only re-export antd's API. `DataTable`, `FilterBar`, `SearchInput`, `ConfirmDialog`, `FormModal`, `DetailDrawer`, `MetricCard` and `ChartCard` will be added when the first module needs them (Phases 4 and 5), so their APIs are shaped by real use.
+Plain antd `Button` is used directly; a wrapper was not added because it would only re-export antd's API.
+
+### Admin building blocks (Phase 3)
+
+| Component                                     | File                                  | Purpose                                                                                                                                                                     |
+| --------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SearchInput`                                 | `components/ui/SearchInput.tsx`       | Debounced search (300ms; Enter and clear commit immediately)                                                                                                                |
+| `FilterBar`                                   | `components/ui/FilterBar.tsx`         | Search plus declarative select, multi-select and date-range filters, active count, reset, extra actions                                                                     |
+| `DataTable`                                   | `components/ui/DataTable.tsx`         | Directory table: delayed skeleton on first load, overlay on refetch, error with retry, empty state, server-style paging and sorting, sticky header, keyboard-clickable rows |
+| `RowActions`                                  | `components/ui/RowActions.tsx`        | Per-row "More actions" menu filtered by permission                                                                                                                          |
+| `ConfirmDialog`                               | `components/ui/ConfirmDialog.tsx`     | Consequence list, danger tone, optional required reason, stays open on failure                                                                                              |
+| `FormModal`                                   | `components/ui/FormModal.tsx`         | antd Form in a Modal with validation and inline save errors                                                                                                                 |
+| `DetailDrawer`, `DetailSection`, `DetailList` | `components/ui/DetailDrawer.tsx`      | Record side panel with loading and error states, sections and label-value lists                                                                                             |
+| `DemoDataTag`                                 | `components/ui/DemoDataTag.tsx`       | Dashed "Demo data" marker for figures                                                                                                                                       |
+| `MetricCard`                                  | `components/dashboard/MetricCard.tsx` | KPI with arrow and text change indicator, optional link, built-in skeleton                                                                                                  |
+| `ChartCard`                                   | `components/dashboard/ChartCard.tsx`  | Chart container with fixed height across loading, error, empty and content states, plus a text summary for screen readers                                                   |
+| `Can`                                         | `components/auth/Can.tsx`             | Action-level permission gate                                                                                                                                                |
+
+Conventions:
+
+- **Change indicators** always pair an arrow with signed text (for example "+5.2% vs last week"). Set `higherIsBetter: false` for metrics where a drop is good.
+- **Charts** take colors from `useChartTheme()` (`styles/chartTheme.ts`): brand yellow first, then ink, info, success, warning, error.
+- **Consequential actions** go through `ConfirmDialog`. Enforcement actions set `requireReason`.
+- **Formatting** uses `lib/formatters` (fixed `en-US` and `UTC`, money in cents) so server and client output match.
 
 ## Public website patterns
 

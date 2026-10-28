@@ -107,10 +107,22 @@ export function ChartSkeleton({ height = 280 }: { height?: number }) {
   );
 }
 
-export function TableSkeleton({ rows = 8, columns = 5 }: { rows?: number; columns?: number }) {
+interface TableSkeletonProps {
+  rows?: number;
+  columns?: number;
+  /** Omits the card surface, for use inside a container that already has one. */
+  bare?: boolean;
+}
+
+const BarePadding = styled.div`
+  padding: ${({ theme }) => theme.space(4)};
+`;
+
+export function TableSkeleton({ rows = 8, columns = 5, bare = false }: TableSkeletonProps) {
+  const Wrapper = bare ? BarePadding : Surface;
   return (
     <BusyRegion label="Loading table">
-      <Surface>
+      <Wrapper>
         <Skeleton.Input active block />
         {Array.from({ length: rows }, (_, row) => (
           <TableRow key={row}>
@@ -119,7 +131,7 @@ export function TableSkeleton({ rows = 8, columns = 5 }: { rows?: number; column
             ))}
           </TableRow>
         ))}
-      </Surface>
+      </Wrapper>
     </BusyRegion>
   );
 }

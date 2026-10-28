@@ -52,6 +52,29 @@ Copy `.env.example` to `.env.local` and restart the dev server after changing va
 | `getDemoAccountForRole(role)`   | `DemoAdminAccount`   | Demo role switcher only                                              |
 | `restoreDemoSession(accountId)` | `DemoAdminAccount`   | Production would validate a server session instead                   |
 
+### AuditService (Phase 3)
+
+| Method                 | Returns      | Notes                                                                                                                                                     |
+| ---------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `record(draft, actor)` | `AuditEvent` | Demo only. The mock generates the id and timestamp. In production the backend writes audit records as part of each action, and the client only reads them |
+
+### List queries (Phase 3)
+
+Mock list services use `applyListQuery(items, query, config)` from `src/services/mock/query.ts`:
+
+```ts
+applyListQuery(USERS, query, {
+  searchFields: (user) => [user.username, user.displayName, user.email],
+  filterPredicates: {
+    status: (user, value) => user.status === value,
+    subscription: (user, values) => values.includes(user.subscription),
+  },
+  sortAccessors: { createdAt: (user) => user.createdAt, username: (user) => user.username },
+});
+```
+
+Empty filter values (`undefined`, `null`, `""`, `[]`) are ignored. The requested page is clamped to the last page. The result is `PaginatedResult<T>` (`items`, `total`, `page`, `pageSize`), which is the **proposed** response shape for real list endpoints.
+
 Proposed production endpoints are **not defined**. Final URLs, authentication scheme and response formats must come from the backend team. Anything in this document that resembles an endpoint is a proposal.
 
 ## Authentication integration points

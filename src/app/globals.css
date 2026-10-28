@@ -73,6 +73,11 @@ svg {
   border: 0;
 }
 
+/* Detail drawers never exceed the viewport on small screens. */
+.ta-detail-drawer .ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+
 .ta-skip-link {
   position: absolute;
   left: 16px;
