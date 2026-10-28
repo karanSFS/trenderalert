@@ -13,13 +13,13 @@ import {
 } from "@/data/mock";
 import {
   DASHBOARD_RANGE_DAYS,
-  type BreakdownItem,
   type DashboardRange,
   type DashboardSummary,
   type KpiMetric,
   type SeriesPoint,
 } from "@/features/dashboard/dashboardTypes";
 import type { DashboardService } from "@/services/contracts/dashboardService";
+import { splitByWeights } from "@/data/mock/seed";
 import { mockRequest } from "./mockDelay";
 
 type NumericField = Exclude<keyof DashboardDailyRecord, "date">;
@@ -29,23 +29,6 @@ const sum = (records: readonly DashboardDailyRecord[], field: NumericField) =>
 
 const last = (records: readonly DashboardDailyRecord[], field: NumericField) =>
   records.length ? records[records.length - 1][field] : 0;
-
-/** Splits a total by weights with largest-remainder rounding, so parts add up exactly. */
-function splitByWeights(total: number, weights: BreakdownItem[]): BreakdownItem[] {
-  const weightSum = weights.reduce((acc, item) => acc + item.value, 0);
-  const raw = weights.map((item) => (total * item.value) / weightSum);
-  const floors = raw.map(Math.floor);
-  let remainder = total - floors.reduce((acc, value) => acc + value, 0);
-  const order = raw
-    .map((value, index) => ({ index, fraction: value - floors[index] }))
-    .sort((a, b) => b.fraction - a.fraction);
-  for (const { index } of order) {
-    if (remainder <= 0) break;
-    floors[index] += 1;
-    remainder -= 1;
-  }
-  return weights.map((item, index) => ({ label: item.label, value: floors[index] }));
-}
 
 /** Buckets are aligned to the end of the range, so only the oldest bucket can be partial. */
 function bucketTransactions(

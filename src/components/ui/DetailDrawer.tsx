@@ -14,7 +14,7 @@ interface DetailDrawerProps {
   subtitle?: ReactNode;
   /** Usually a StatusBadge. */
   status?: ReactNode;
-  /** Header actions such as "Suspend" or "Open full page". */
+  /** Actions such as "Suspend" or "Open full page", shown in a toolbar above the content. */
   actions?: ReactNode;
   loadStatus?: AsyncStatus;
   error?: ServiceError | null;
@@ -43,10 +43,17 @@ const Subtitle = styled.div`
   color: ${({ theme }) => theme.colors.textSecondary};
 `;
 
-const Actions = styled.div`
+const ActionBar = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: ${({ theme }) => theme.space(2)};
+  margin: calc(-1 * ${({ theme }) => theme.space(2)}) 0 ${({ theme }) => theme.space(5)};
+  padding-bottom: ${({ theme }) => theme.space(4)};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+
+  &:empty {
+    display: none;
+  }
 `;
 
 /** Side panel for inspecting a record without leaving the list. */
@@ -63,7 +70,12 @@ export function DetailDrawer({
   width = 560,
   children,
 }: DetailDrawerProps) {
-  let body: ReactNode = children;
+  let body: ReactNode = (
+    <>
+      {actions ? <ActionBar aria-label="Actions">{actions}</ActionBar> : null}
+      {children}
+    </>
+  );
   if (loadStatus === "loading" || loadStatus === "idle") body = <DetailSkeleton />;
   else if (loadStatus === "failed")
     body = (
@@ -92,7 +104,6 @@ export function DetailDrawer({
           {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
         </Heading>
       }
-      extra={actions ? <Actions>{actions}</Actions> : null}
     >
       {body}
     </Drawer>

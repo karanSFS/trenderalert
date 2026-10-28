@@ -15,6 +15,8 @@ export interface ListState<TFilters> {
   total: number;
   status: AsyncStatus;
   error: ServiceError | null;
+  /** Id of the newest list request; responses from older requests are ignored. */
+  requestId: string | null;
 }
 
 export const DEFAULT_PAGE_SIZE = 10;
@@ -36,6 +38,7 @@ export function createListState<TFilters>(
     total: 0,
     status: "idle",
     error: null,
+    requestId: null,
   };
 }
 
@@ -107,9 +110,14 @@ export const listLifecycle = {
   },
 };
 
-/** Number of filters with a non-empty value, for the "N filters active" indicator. */
+/**
+ * Number of filters with a non-empty value, for the "N filters active" indicator. Boolean
+ * toggles are excluded because they are shown as their own control.
+ */
 export function countActiveFilters(filters: object): number {
   return Object.values(filters).filter((value) =>
-    Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== "",
+    Array.isArray(value)
+      ? value.length > 0
+      : typeof value !== "boolean" && value !== undefined && value !== null && value !== "",
   ).length;
 }

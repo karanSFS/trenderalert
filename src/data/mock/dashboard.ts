@@ -6,12 +6,14 @@ import type {
   PendingCase,
   ServiceHealth,
 } from "@/features/dashboard/dashboardTypes";
+import { DAY_MS, DEMO_AS_OF, seededRandom } from "./seed";
+
+export { DEMO_AS_OF };
 
 /**
  * Fictional dashboard data. Everything is generated from a fixed seed and a fixed reference
  * date so the demo is identical on every run. None of it reflects real platform activity.
  */
-export const DEMO_AS_OF = "2026-10-28T00:00:00Z";
 
 export const DASHBOARD_HISTORY_DAYS = 180;
 export const BASE_REGISTERED_USERS = 184_200;
@@ -30,20 +32,6 @@ export interface DashboardDailyRecord {
   subscriptionRevenue: number;
   refunds: number;
 }
-
-/** Mulberry32: small deterministic pseudo-random generator. */
-function seededRandom(seed: number) {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const DAY_MS = 86_400_000;
 
 function generateDaily(): DashboardDailyRecord[] {
   const random = seededRandom(20261028);

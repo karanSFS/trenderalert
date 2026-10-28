@@ -41,6 +41,11 @@ const MenuArea = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: ${({ theme }) => theme.space(3)} 0;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   .ant-menu-dark {
     background: transparent;
