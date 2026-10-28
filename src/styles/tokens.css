@@ -1,0 +1,22 @@
+/*
+ * Static design tokens that do not change between themes.
+ * Theme-dependent tokens (colors, radii, spacing, typography, shadows) are generated from
+ * src/styles/themes.ts and injected as --ta-* variables on <html>.
+ */
+:root {
+  --ta-sidebar-width: 256px;
+  --ta-sidebar-collapsed-width: 72px;
+  --ta-header-height: 64px;
+  --ta-content-max-width: 1440px;
+  --ta-public-max-width: 1200px;
+
+  --ta-z-header: 100;
+  --ta-z-sidebar: 110;
+  --ta-z-banner: 90;
+
+  --ta-transition-fast: 120ms ease;
+  --ta-transition-base: 200ms ease;
+
+  --ta-focus-ring-width: 2px;
+  --ta-focus-ring-offset: 2px;
+}
