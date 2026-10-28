@@ -27,14 +27,20 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 
 ## Public website (Phase 2)
 
-| Requirement                                                           | Status      | Notes                                                                      |
-| --------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------- |
-| Header with Product, Features, How It Works, Privacy, Support, CTA    | Partial     | Privacy, Terms, Support and CTA exist; anchor sections arrive with Phase 2 |
-| Hero ("Discover What's Trending. Understand Why It Matters.")         | Partial     | Hero copy and CTAs exist; product preview pending                          |
-| Product preview, features, how it works, privacy and trust, final CTA | Not started |                                                                            |
-| Footer with legal links and copyright                                 | Done        | No social links until approved destinations exist                          |
-| Privacy, terms, support pages                                         | Partial     | Placeholder content, clearly marked                                        |
-| No fake app-store links                                               | Done        | None present                                                               |
+| Requirement                                                        | Status  | Notes                                                                           |
+| ------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------- |
+| Header with Product, Features, How It Works, Privacy, Support, CTA | Done    | `PublicHeader`, `publicNav.ts`; anchors work from any page; mobile drawer       |
+| Hero ("Discover What's Trending. Understand Why It Matters.")      | Done    | `HeroSection`, `HeroRadar` (illustrative radar and Trend Card)                  |
+| Product preview with trend cards, TrendScore, geography, activity  | Done    | `ProductSection`, `ProductPreview`, `PreviewTrendCard`; labeled illustrative    |
+| Features (approved capabilities)                                   | Done    | `FeatureSection`; six signature features                                        |
+| How it works                                                       | Done    | `HowItWorksSection`; four steps                                                 |
+| Privacy and trust (no unsupported guarantees)                      | Done    | `PrivacyTrustSection`; links to the pending policy                              |
+| Final call to action                                               | Done    | `CallToAction`, `AppAvailability`; contact plus "coming soon" store badges      |
+| Footer with legal links and copyright                              | Done    | Product and legal columns; no social links until approved destinations exist    |
+| Privacy, terms, support pages                                      | Partial | Placeholder content, clearly marked; awaiting approved text                     |
+| No fake app-store links                                            | Done    | Store URLs are `null` in `publicSite.ts`                                        |
+| Responsive, accessible, page metadata                              | Done    | Verified at 390px and desktop; reduced motion; Open Graph title and description |
+| Original logo artwork                                              | Blocked | Placeholder wordmark                                                            |
 
 ## Admin modules (Phases 4-6)
 

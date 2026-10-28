@@ -27,6 +27,17 @@ The design system builds on Ant Design, customized through the theme tokens in [
 
 Plain antd `Button` is used directly; a wrapper was not added because it would only re-export antd's API. `DataTable`, `FilterBar`, `SearchInput`, `ConfirmDialog`, `FormModal`, `DetailDrawer`, `MetricCard` and `ChartCard` will be added when the first module needs them (Phases 4 and 5), so their APIs are shaped by real use.
 
+## Public website patterns
+
+The landing page uses Server Components with CSS Modules in `src/components/promotional/`:
+
+- **Section rhythm:** `section.module.css` provides `.section` (64px vertical padding), `.sectionMuted` (alternating muted band with borders), `.container` (1200px max), and `SectionHeading` (accent-colored uppercase eyebrow, 28-40px title, large lead).
+- **Tiles:** `.grid` with 1, 2 or 3 columns (below 640px, from 640px, from 992px) and `.tile` cards with a 40px icon square (solid yellow for features, outlined for trust points).
+- **Trend Card:** `PreviewTrendCard` shows the stage pill (Spark info, Rising success, Hot brand yellow, Peaking warning, Cooling neutral; text always included), TrendScore, a yellow momentum meter, a reason chip, location, time left and origin credit. Every use is labeled illustrative.
+- **Radar motif:** concentric rings, a yellow sweep and signal nodes (UX14-003 graphic identity). Animation is off under `prefers-reduced-motion`.
+- **Dark CTA panel:** uses the sidebar background so it reads as the brand's black in every preset.
+- **Icons in Server Components:** import from `components/promotional/icons.ts`, not directly from `@ant-design/icons`.
+
 ## Buttons
 
 - Primary: yellow background, ink text, weight 600, radius 8, no shadow. One primary action per area.

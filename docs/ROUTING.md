@@ -2,14 +2,25 @@
 
 ## Public routes
 
-| Route      | File                                | Status                                          |
-| ---------- | ----------------------------------- | ----------------------------------------------- |
-| `/`        | `src/app/(public)/page.tsx`         | Phase 1 hero only; full landing page in Phase 2 |
-| `/privacy` | `src/app/(public)/privacy/page.tsx` | Placeholder content, clearly marked             |
-| `/terms`   | `src/app/(public)/terms/page.tsx`   | Placeholder content, clearly marked             |
-| `/support` | `src/app/(public)/support/page.tsx` | Placeholder content, clearly marked             |
+| Route      | File                                | Status                                  |
+| ---------- | ----------------------------------- | --------------------------------------- |
+| `/`        | `src/app/(public)/page.tsx`         | Full promotional landing page (Phase 2) |
+| `/privacy` | `src/app/(public)/privacy/page.tsx` | Placeholder content, clearly marked     |
+| `/terms`   | `src/app/(public)/terms/page.tsx`   | Placeholder content, clearly marked     |
+| `/support` | `src/app/(public)/support/page.tsx` | Placeholder content, clearly marked     |
 
 All public routes share `src/app/(public)/layout.tsx` (public header, footer, skip link).
+
+### Landing page anchors
+
+| Anchor           | Section                      |
+| ---------------- | ---------------------------- |
+| `/#product`      | Illustrative product preview |
+| `/#features`     | Features                     |
+| `/#how-it-works` | How it works                 |
+| `/#privacy`      | Privacy and trust            |
+
+Nav links use the `/#anchor` form so they work from any public page. `scroll-padding-top` in `globals.css` keeps section headings clear of the sticky header.
 
 ## Admin routes
 

@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-10-28 — Phase 2: Promotional website
+
+**Feature:** Full public landing page at `/`.
+
+**Main files affected**
+
+- `src/content/landing.ts` (copy and illustrative preview data), `src/lib/constants/publicSite.ts`
+- `src/components/promotional/`: `HeroSection`, `HeroRadar`, `ProductSection`, `ProductPreview`, `PreviewTrendCard`, `FeatureSection`, `HowItWorksSection`, `PrivacyTrustSection`, `CallToAction`, `AppAvailability`, `SectionHeading`, `PublicFooter`, `publicNav.ts`, `icons.ts` and their CSS Modules
+- `src/app/(public)/page.tsx`, `src/app/globals.css`
+
+**Behavior added**
+
+- Header anchors for Product, Features, How It Works and Privacy, plus Support and a Contact CTA. Anchors work from any public page, and the mobile drawer uses the same links.
+- Hero with "Explore What's Next" and "How it works" CTAs and a decorative radar with an illustrative Trend Card. The animation is disabled under reduced motion.
+- Interactive illustrative product preview: a scope switcher (Near You, City, Nationwide, Global) over Trend Cards showing lifecycle stage, TrendScore, location, reason, origin credit, time left and activity, plus the five Trend Card questions.
+- Features (six signature capabilities), how it works (four steps), privacy and trust (six points with a link to the pending policy).
+- Final CTA with contact action and "Coming to iOS / Android" badges that become links only when approved URLs are configured.
+- Footer with product and legal columns.
+- Page metadata with Open Graph title and description.
+
+**Technical note:** The `@ant-design/icons` barrel creates React context at import time and cannot load in Server Components. Server sections import icons through `src/components/promotional/icons.ts`, a `"use client"` re-export.
+
+**Documentation updated:** `features/promotional-website.md` (new, with a copy-to-spec traceability table), `REQUIREMENTS_MAPPING.md`, `ROUTING.md`, `DESIGN_SYSTEM.md`.
+
+**Known limitations**
+
+- Logo placeholder; no real product screenshots; legal copy and store URLs pending.
+- Preview places and handles are fictional.
+
 ## 2026-10-28 — Phase 1: Project foundation
 
 **Feature:** Project scaffold, theme system, Redux store, demo authentication, admin shell, public site shell, route registry and documentation foundation.

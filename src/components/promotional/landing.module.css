@@ -1,7 +1,7 @@
 .hero {
   position: relative;
   overflow: hidden;
-  padding: var(--ta-space-16) 0 var(--ta-space-12);
+  padding: var(--ta-space-12) 0 var(--ta-space-10);
 }
 
 .hero::before {
@@ -13,7 +13,7 @@
   height: 120%;
   background: radial-gradient(
     closest-side,
-    color-mix(in srgb, var(--ta-color-primary) 20%, transparent) 0%,
+    color-mix(in srgb, var(--ta-color-primary) 18%, transparent) 0%,
     transparent 100%
   );
   pointer-events: none;
@@ -21,9 +21,30 @@
 
 .heroInner {
   position: relative;
+  display: grid;
+  gap: var(--ta-space-12);
+  align-items: center;
   max-width: var(--ta-public-max-width);
   margin: 0 auto;
   padding: 0 var(--ta-space-5);
+}
+
+@media (min-width: 992px) {
+  .hero {
+    padding: var(--ta-space-16) 0;
+  }
+
+  .heroInner {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  }
+}
+
+.heroCopy {
+  min-width: 0;
+}
+
+.heroVisual {
+  min-width: 0;
 }
 
 .eyebrow {
@@ -41,7 +62,7 @@
 .heroTitle {
   max-width: 16ch;
   margin: 0;
-  font-size: clamp(36px, 6vw, 64px);
+  font-size: clamp(36px, 5.6vw, 62px);
   line-height: 1.05;
   letter-spacing: -0.03em;
   color: var(--ta-color-text-primary);
@@ -53,7 +74,7 @@
 }
 
 .heroText {
-  max-width: 58ch;
+  max-width: 54ch;
   margin: var(--ta-space-6) 0 0;
   font-size: var(--ta-font-size-lg);
   color: var(--ta-color-text-secondary);
@@ -70,6 +91,7 @@
 .ctaSecondary {
   display: inline-flex;
   align-items: center;
+  gap: var(--ta-space-2);
   height: 46px;
   padding: 0 var(--ta-space-6);
   border-radius: var(--ta-radius-button);

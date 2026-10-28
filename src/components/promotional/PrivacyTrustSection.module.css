@@ -1,0 +1,9 @@
+.policyNote {
+  margin: var(--ta-space-8) 0 0;
+  color: var(--ta-color-text-secondary);
+}
+
+.policyNote a {
+  color: var(--ta-color-accent-text);
+  font-weight: 600;
+}

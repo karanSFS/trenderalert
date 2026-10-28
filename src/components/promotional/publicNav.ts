@@ -4,9 +4,18 @@ export interface PublicNavLink {
 }
 
 export const PUBLIC_NAV_LINKS: PublicNavLink[] = [
-  { label: "Privacy", href: "/privacy" },
-  { label: "Terms", href: "/terms" },
+  { label: "Product", href: "/#product" },
+  { label: "Features", href: "/#features" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Privacy", href: "/#privacy" },
   { label: "Support", href: "/support" },
+];
+
+export const PUBLIC_FOOTER_PRODUCT_LINKS: PublicNavLink[] = [
+  { label: "Product preview", href: "/#product" },
+  { label: "Features", href: "/#features" },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "Privacy and trust", href: "/#privacy" },
 ];
 
 export const PUBLIC_FOOTER_LINKS: PublicNavLink[] = [

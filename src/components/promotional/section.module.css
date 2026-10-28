@@ -1,0 +1,114 @@
+.section {
+  padding: var(--ta-space-16) 0;
+}
+
+.sectionMuted {
+  background: var(--ta-color-surface-muted);
+  border-top: 1px solid var(--ta-color-border);
+  border-bottom: 1px solid var(--ta-color-border);
+}
+
+.container {
+  width: 100%;
+  max-width: var(--ta-public-max-width);
+  margin: 0 auto;
+  padding: 0 var(--ta-space-5);
+}
+
+.heading {
+  max-width: 680px;
+  margin-bottom: var(--ta-space-10);
+}
+
+.headingCenter {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 var(--ta-space-3);
+  font-size: var(--ta-font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ta-color-accent-text);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(28px, 3.6vw, 40px);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--ta-color-text-primary);
+}
+
+.lead {
+  margin: var(--ta-space-4) 0 0;
+  font-size: var(--ta-font-size-lg);
+  color: var(--ta-color-text-secondary);
+}
+
+/* Card grid used by features and trust sections */
+.grid {
+  display: grid;
+  gap: var(--ta-space-4);
+  grid-template-columns: 1fr;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 992px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tile {
+  padding: var(--ta-space-6);
+  background: var(--ta-color-surface);
+  border: 1px solid var(--ta-color-border);
+  border-radius: var(--ta-radius-card);
+  transition: border-color var(--ta-transition-fast);
+}
+
+.tile:hover {
+  border-color: var(--ta-color-border-strong);
+}
+
+.tileIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--ta-space-4);
+  border-radius: 10px;
+  font-size: 18px;
+  color: var(--ta-color-on-primary);
+  background: var(--ta-color-primary);
+}
+
+.tileIconOutline {
+  color: var(--ta-color-text-primary);
+  background: var(--ta-color-primary-soft);
+  border: 1px solid var(--ta-color-primary);
+}
+
+.tileTitle {
+  margin: 0 0 var(--ta-space-2);
+  font-size: var(--ta-font-size-lg);
+  font-weight: 650;
+  color: var(--ta-color-text-primary);
+}
+
+.tileText {
+  margin: 0;
+  color: var(--ta-color-text-secondary);
+}

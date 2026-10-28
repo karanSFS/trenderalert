@@ -30,8 +30,9 @@ src/
     admin/             Admin-only screens (module placeholder, admin 404)
     auth/              Demo sign-in screen
     layout/            Admin shell: layout, sidebar, header, breadcrumbs
-    promotional/       Public header, footer, hero, content-page styles
+    promotional/       Public header, footer and landing-page sections
     ui/                Shared UI: PageHeader, StatusBadge, states, skeletons, theme switcher
+  content/             Static public-site copy and illustrative preview content
   data/mock/           Fictional, deterministic mock datasets
   features/            Redux slices, selectors and types per domain
   lib/constants/       App constants, roles/permissions, admin route registry, navigation
@@ -54,7 +55,8 @@ See [ROUTING.md](ROUTING.md). In short: `/`, `/privacy`, `/terms`, `/support`, `
 - Demo sign-in has no passwords. Role checks are UI-only and provide no security.
 - The TrenderAlert logo is a **placeholder wordmark** until the owner supplies the original artwork.
 - Legal, privacy and support page copy are placeholders awaiting approved text.
-- Phase 1 delivers the foundation only. Admin module routes show a "scheduled for phase N" placeholder.
+- Phases 1 and 2 are complete (foundation and public website). Admin module routes still show a "scheduled for phase N" placeholder.
+- The public product preview uses illustrative, fictional Trends and is labeled as such.
 - No automated test runner is configured yet (see [TESTING.md](TESTING.md)).
 
 ## Development conventions
