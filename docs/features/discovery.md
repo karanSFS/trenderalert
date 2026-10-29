@@ -1,5 +1,7 @@
 # Discovery
 
+> **Status (2026-10-29):** The Ranking tab edits the live `RANKING_ALGORITHM_V14` feature flag weights (must total 100%, justification required). Markets, locations, sources, freshness and relevance remain demo data. See [BACKEND_INTEGRATION.md](../BACKEND_INTEGRATION.md).
+
 ### 1. Overview
 
 Discovery settings in tabs: markets, featured locations, sources, freshness and relevance, and a ranking-weights proposal.

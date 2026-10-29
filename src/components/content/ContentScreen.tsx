@@ -7,7 +7,6 @@ import styled from "styled-components";
 import { Can } from "@/components/auth/Can";
 import { DataTable } from "@/components/ui/DataTable";
 import { DetailDrawer, DetailList, DetailSection } from "@/components/ui/DetailDrawer";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { EntityLink } from "@/components/ui/EntityLink";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -17,7 +16,6 @@ import { useConfirm } from "@/components/ui/useConfirm";
 import { Identity } from "@/components/ui/Identity";
 import {
   contentActions,
-  fetchContentContext,
   fetchContentItem,
   fetchContentList,
 } from "@/features/content/contentSlice";
@@ -25,11 +23,9 @@ import type { ContentFilters, ContentItem } from "@/features/content/contentType
 import { contentSelectors } from "@/features/moduleSelectors";
 import {
   AUDIENCE_LABELS,
-  CASE_STATUS,
   CONTENT_STATUS,
   CONTENT_TYPE_LABELS,
   toOptions,
-  TREND_STAGE,
 } from "@/lib/constants/statusLabels";
 import { formatDate, formatDateTime } from "@/lib/formatters/date";
 import { useDirectoryList } from "@/lib/hooks/useDirectoryList";
@@ -46,29 +42,6 @@ const Caption = styled.div`
   .anticon {
     margin-top: 3px;
     color: ${({ theme }) => theme.colors.textTertiary};
-  }
-`;
-
-const ReportList = styled.ul`
-  margin: 0;
-  padding: 0;
-  list-style: none;
-
-  li {
-    display: flex;
-    justify-content: space-between;
-    gap: ${({ theme }) => theme.space(2)};
-    padding: ${({ theme }) => theme.space(2)} 0;
-    border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  }
-
-  li:last-child {
-    border-bottom: none;
-  }
-
-  small {
-    display: block;
-    color: ${({ theme }) => theme.colors.textSecondary};
   }
 `;
 
@@ -89,7 +62,6 @@ export function ContentScreen() {
   const { confirm, dialog } = useConfirm();
   const { actionItems } = useContentActions(confirm, () => {
     refetch();
-    if (openId) dispatch(fetchContentContext(openId));
   });
   const creatorId = list.query.filters.creatorId;
 
@@ -226,15 +198,12 @@ function ContentDrawer({
   const dispatch = useAppDispatch();
   const item = useAppSelector((state) => contentSelectors.selectById(state, id));
   const detail = useAppSelector(contentSelectors.selectDetail);
-  const context = useAppSelector(contentSelectors.selectContext);
 
   useEffect(() => {
     if (!id) return;
     dispatch(fetchContentItem(id));
-    dispatch(fetchContentContext(id));
   }, [dispatch, id]);
 
-  const related = context.id === id ? context.data : null;
   const loadStatus = item ? "succeeded" : detail.id === id ? detail.status : "loading";
 
   return (
@@ -291,45 +260,6 @@ function ContentDrawer({
                 { key: "reports", label: "Reports", value: item.reportCount },
               ]}
             />
-          </DetailSection>
-          {related?.trend ? (
-            <DetailSection title="Trend">
-              <DetailList
-                items={[
-                  {
-                    key: "topic",
-                    label: "Topic",
-                    value: (
-                      <EntityLink kind="trend" id={related.trend.id}>
-                        {related.trend.topic}
-                      </EntityLink>
-                    ),
-                  },
-                  {
-                    key: "stage",
-                    label: "Stage",
-                    value: <StatusBadge {...TREND_STAGE[related.trend.stage]} />,
-                  },
-                ]}
-              />
-            </DetailSection>
-          ) : null}
-          <DetailSection title="Related reports">
-            {related && related.reports.length > 0 ? (
-              <ReportList>
-                {related.reports.map((report) => (
-                  <li key={report.id}>
-                    <div>
-                      <EntityLink kind="case" id={report.id} />
-                      <small>{report.category}</small>
-                    </div>
-                    <StatusBadge {...CASE_STATUS[report.status]} />
-                  </li>
-                ))}
-              </ReportList>
-            ) : (
-              <EmptyState compact title={related ? "No reports" : "Loading…"} />
-            )}
           </DetailSection>
         </>
       ) : null}

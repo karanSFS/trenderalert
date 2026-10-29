@@ -51,6 +51,14 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    /** The backend rejected the session (expired or revoked) while the portal was open. */
+    sessionEnded(state) {
+      state.currentAdmin = null;
+      state.sessionError = {
+        code: "UNAUTHENTICATED",
+        message: "Your session has ended. Sign in again to continue.",
+      };
+    },
     clearSignInError(state) {
       state.signInError = null;
       if (state.signInStatus === "failed") state.signInStatus = "idle";
@@ -94,5 +102,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearSignInError } = authSlice.actions;
+export const { clearSignInError, sessionEnded } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,5 +1,5 @@
 import type { GeoScope } from "@/features/trends/trendsTypes";
-import type { EntityId, IsoDateString } from "@/types/common";
+import type { EntityId } from "@/types/common";
 
 export type MarketStatus = "active" | "pilot" | "planned";
 
@@ -40,27 +40,10 @@ export interface RelevanceRadius {
   radiusKm: number | null;
 }
 
-export interface RankingFactor {
-  id: string;
-  label: string;
-  /** Percent weight; all factors must sum to 100. */
-  weight: number;
-}
-
-export interface RankingConfig {
-  version: string;
-  factors: RankingFactor[];
-  risingThreshold: number;
-  hotThreshold: number;
-  updatedAt: IsoDateString;
-  updatedBy: string;
-}
-
 export interface DiscoveryConfig {
   markets: Market[];
   featuredLocations: FeaturedLocation[];
   sources: DiscoverySource[];
   freshness: FreshnessWindow[];
   relevance: RelevanceRadius[];
-  ranking: RankingConfig;
 }

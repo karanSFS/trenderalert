@@ -2,76 +2,72 @@
 
 ### 1. Overview
 
-Directory and detail page for member accounts: search, filters, status, subscription, verification, safety indicators, moderation and audit history, and simulated enforcement (restrict, suspend, reinstate). Deletion status is shown read-only.
+Member directory from the TrenderAlert backend with search, status and age filters, and a read-only member page.
 
 ### 2. Requirements
 
-Prompt section 11. Specification D-10 (30-day deletion grace), PROF-003 (admin corrections are audited), Support Agent role limits ("limited account metadata"). Approximate location only (D-03).
+Prompt section 11. ADMIN-006 (support sees limited personal data).
 
 ### 3. Routes and screens
 
-- `/admin/users`: directory (`UsersScreen`).
-- `/admin/users/[id]`: detail page (`UserDetailScreen`).
-- Dialog: `ConfirmDialog` for each enforcement action.
+- `/admin/users` (`UsersScreen`).
+- `/admin/users/[id]` (`UserDetailScreen`).
 
 ### 4. User interactions
 
-| Action                                                                                 | Where                     | Rule                                     | Result                                    |
-| -------------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------- | ----------------------------------------- |
-| Search                                                                                 | Directory                 | Username, name, email, id                | Debounced; page resets to 1               |
-| Filter                                                                                 | Directory                 | Status, subscription, verification       | Kept in Redux across navigation           |
-| Sort                                                                                   | Directory                 | Member, reports, registered              | Server-style sort                         |
-| View                                                                                   | Row click or row action   | —                                        | Opens detail page                         |
-| Restrict                                                                               | Row action, detail header | Active only; reason required             | Status Restricted, +1 strike, audit event |
-| Suspend                                                                                | Row action, detail header | Not already suspended; reason required   | Status Suspended, +1 strike, audit event  |
-| Reinstate                                                                              | Row action, detail header | Restricted or suspended; reason required | Status Active, audit event                |
-| View content                                                                           | Detail page               | `content:view`                           | Opens Content filtered by creator         |
-| Accounts pending deletion are read-only; every action is disabled with an explanation. |
+| Action                                                                                               | Backend                                          |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Search name, username, email, phone or id                                                            | `GET /admin/users?q`                             |
+| Filter by status (`ACTIVE`, `PENDING_VERIFICATION`, `SUSPENDED`, `BANNED`) and age (minors / adults) | `status`, `is_minor`                             |
+| Page through results (exact totals)                                                                  | `limit`, `offset`                                |
+| Open a member                                                                                        | Directory search by id (no single-user endpoint) |
+
+Account actions (warn, restrict, suspend, ban) are applied through moderation reports; the member page links to the queue.
 
 ### 5. Components
 
-`UsersScreen`, `UserDetailScreen`, `useUserActions` (specs, eligibility, row actions), shared `DataTable`, `FilterBar`, `RowActions`, `useConfirm`, `SectionCard`, `DetailList`, `Timeline`, `EntityLink`, `RecordState`, `StatusBadge`.
+`UsersScreen` (exports `memberName`, `useContactFormatter`, `adminRoleLabel`), `UserDetailScreen`.
 
 ### 6. Redux state
 
-`users` slice from `createDirectorySlice`: `list` (query, ids, total, status, error, requestId), `entities`, `detail`, `context` (`UserActivity`), `mutation`. Thunks: `fetchUsers`, `fetchUser`, `fetchUserActivity`, `enforceUser`. Selectors: `usersSelectors` in `features/moduleSelectors.ts`. Session audit events come from `makeSelectAuditEventsForTarget`.
+`users` directory slice. Thunks `fetchUsers`, `fetchUser`.
 
 ### 7. Data model
 
-`PlatformUser` (`features/users/usersTypes.ts`): id, username, displayName, email (fictional `.test`), registeredAt, approximateLocation, status (`active | restricted | suspended | pending_deletion`), subscription (plan, store, renewsAt), verification, followers, trendsPublished, reportsReceived, strikes, lastEnforcement, deletion.
+`DirectoryUser`: id, email, phone, username, displayName, avatarUrl, accountStatus, isMinor, ageVerifyStatus, trenderScore, adminRole, createdAt.
 
 ### 8. Mock data
 
-`data/mock/users.ts`: 60 accounts `usr-1001`…`usr-1060`, seed 1001. Fixed statuses: 5 restricted, 3 suspended, 3 pending deletion (so moderation outcomes match). `usr-1044` is `@riverton.official`, `usr-1045` is `@deal.drop.daily` (dashboard references). `reportsReceived` is derived from moderation cases when the demo database loads.
+None on these screens. `data/mock/users.ts` remains only as the source of fictional members inside other demo modules (content, support, subscriptions); links to those members render as plain text.
 
 ### 9. Service layer
 
-`UsersService`: `list`, `get`, `getActivity` (cases about the user, content and Trend counts, audit history), `enforce(id, action, reason, actor)`.
+`UserDirectoryService` (`backendServices.ts`), implemented by `services/api/usersApi.ts`.
 
 ### 10. Loading and error handling
 
-Table skeleton on first load, overlay on refetch, error with retry, empty state. Detail page uses `RecordState` (skeleton, "Record not found", error with retry). Dialog errors keep the dialog open.
+Standard table states; record-not-found page for unknown ids.
 
 ### 11. Permissions
 
-View: `users:view` (Super Administrator, Content Moderator, Support Agent). Enforcement: `users:manage` (Super Administrator only). Moderators restrict or suspend through moderation cases.
+`users:view` (Super Administrator, Content Moderator, Support Agent). Full email and phone only with `users:manage` (Super Administrator); everyone else sees masked values.
 
 ### 12. Business rules
 
-Reason of at least 10 characters for every enforcement action. Pending-deletion accounts cannot be changed (D-10). Strikes remain after reinstatement. Location shown as an approximate area only.
+Contact details are masked by default. Administrator accounts show their role.
 
 ### 13. Testing
 
-Verified: directory, filters, sort, pagination; restrict with reason validation and success toast; row updates; detail page with history and audit entry. Service rules verified by script (restrict pending-deletion rejected; reinstate restricted). See `TESTING.md`.
+Verified against the backend: 765 members, search, status filter, paging and the member page.
 
 ### 14. Files changed
 
-`src/components/users/*`, `src/app/admin/(portal)/users/**`, `src/features/users/*`, `src/data/mock/users.ts`, `src/services/mock/usersService.ts`.
+`src/components/users/*`, `src/features/users/*`, `src/services/api/usersApi.ts`.
 
 ### 15. Backend integration requirements
 
-Proposed: `GET /admin/users`, `GET /admin/users/{id}`, `GET /admin/users/{id}/activity`, `POST /admin/users/{id}/enforcement {action, reason}`. Server-side authorization, audit records and member notification are required. Fields returned must respect the caller's role (Support Agents receive limited metadata).
+Mask contact details for Support Agents on the server. Add `GET /admin/users/{id}`.
 
 ### 16. Known limitations
 
-The directory is a 60-account sample, not the platform total. Demo changes reset on refresh. No bulk actions. Deletion cannot be cancelled by admins by design.
+No direct account actions (by design: they go through moderation). No moderation history per member yet.

@@ -2,11 +2,11 @@
 
 ### 1. Overview
 
-Directory of member appeals against enforcement decisions, with a drawer showing the original decision, the member's reason, evidence and decision history, and simulated uphold or reverse decisions.
+Member appeals against enforcement decisions, from the TrenderAlert backend, with a drawer to read the statement and evidence and to uphold or overturn the decision.
 
 ### 2. Requirements
 
-Prompt section 13 (appeals). Specification trust measure "successful appeals"; GRP-005 (removal with optional appeal).
+Prompt section 13 (appeals). Backend Module 11.
 
 ### 3. Routes and screens
 
@@ -14,35 +14,35 @@ Prompt section 13 (appeals). Specification trust measure "successful appeals"; G
 
 ### 4. User interactions
 
-| Action                                                   | Rule                         | Result                                                       |
-| -------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------ |
-| Filter status, original decision; search; sort submitted | —                            | Query kept in Redux                                          |
-| Uphold decision                                          | Pending or in review; reason | Status Upheld; history entry                                 |
-| Reverse decision                                         | Pending or in review; reason | Status Reversed; original enforcement undone; strike removed |
+| Action             | Rule                                                    | Backend                                                        |
+| ------------------ | ------------------------------------------------------- | -------------------------------------------------------------- |
+| Filter by status   | `SUBMITTED`, `IN_REVIEW`, `UPHELD`, `OVERTURNED`        | `GET /admin/appeals?status_filter&limit&offset`                |
+| Open appeal        | —                                                       | `GET /admin/appeals/{id}`                                      |
+| Uphold or overturn | Submitted or in review; written reason (10+ characters) | `POST /admin/appeals/{id}/resolve {status, resolution_reason}` |
 
 ### 5. Components
 
-`AppealsScreen` (with `AppealDrawer` and `useAppealDecision`), shared components.
+`AppealsScreen` (with `AppealDrawer`), shared `DataTable`, `DetailDrawer`, `useConfirm`.
 
 ### 6. Redux state
 
-`appeals` slice with context = original `ModerationCase`. Thunks `fetchAppeals`, `fetchAppeal`, `fetchAppealCase`, `decideAppeal`.
+`appeals` directory slice. Thunks `fetchAppeals`, `fetchAppeal`, `resolveAppeal`.
 
 ### 7. Data model
 
-`Appeal`: id, caseId, userId, username, originalDecision, appealReason, evidence, status, assignedReviewerName, submittedAt, history, decision.
+`Appeal`: id, reportId, appellantUserId/Name/Email, statement, evidenceAssets, assignedAdminId, status, resolutionReason, submittedAt, resolvedAt.
 
 ### 8. Mock data
 
-`data/mock/appeals.ts`: 15 appeals `app-0400`…`app-0414` referencing closed enforcement cases. `app-0412` is upheld on Oct 26 (dashboard activity). Seeded reversals reference warnings only, so seeded account and content states stay consistent.
+None. The previous mock appeals were removed.
 
 ### 9. Service layer
 
-`AppealsService`: `list`, `get`, `getOriginalCase`, `decide`. Reversal restores content or account access in the shared demo database and adds a history entry to the original case.
+`AppealsService` (`backendServices.ts`), implemented in `services/api/moderationApi.ts`.
 
 ### 10. Loading and error handling
 
-Standard states; decided appeals disable both actions with a tooltip.
+Standard table and drawer states. The empty state explains that appeals appear when members challenge a decision.
 
 ### 11. Permissions
 
@@ -50,20 +50,20 @@ View `appeals:view`, decide `appeals:decide` (Super Administrator, Content Moder
 
 ### 12. Business rules
 
-Each appeal can be decided once. Reason required and shared with the member. Reversal never restores an account pending deletion.
+Resolved appeals are read-only. The appellant's email is masked in the list.
 
 ### 13. Testing
 
-Script: reversing an appeal for removed content restores it; deciding twice is rejected.
+The backend currently has no appeals, so resolve could not be exercised end to end; listing, filters and the empty state were verified.
 
 ### 14. Files changed
 
-`src/components/appeals/AppealsScreen.tsx`, `src/app/admin/(portal)/appeals/page.tsx`, `src/features/appeals/*`, `src/data/mock/appeals.ts`, `src/services/mock/appealsService.ts`.
+`src/components/appeals/AppealsScreen.tsx`, `src/features/appeals/*`, `src/services/api/moderationApi.ts`.
 
 ### 15. Backend integration requirements
 
-Proposed: `GET /admin/appeals`, `GET /admin/appeals/{id}`, `POST /admin/appeals/{id}/decision {outcome, reason}`. Ideally decided by a reviewer other than the original decision maker (owner policy decision).
+None outstanding.
 
 ### 16. Known limitations
 
-No reviewer separation enforced in the demo. Evidence is text only.
+No way to mark an appeal "in review" from the portal.

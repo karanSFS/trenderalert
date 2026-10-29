@@ -2,73 +2,74 @@
 
 ### 1. Overview
 
-Priority-ordered queue of member reports and a full case page with report details, related content and account, prior cases, reviewer notes, history and a decision bar.
+Live trust and safety queue from the TrenderAlert backend, and a report page where moderators assign reports, add internal notes and take enforcement actions.
 
 ### 2. Requirements
 
-Prompt section 13. Product goal "Safe community" (reports enter a staffed queue). COMM-004 (minimum necessary context). Content Moderator role definition.
+Prompt section 13. Product goal "Safe community" (reports enter a staffed queue). Content Moderator role definition. Backend Module 11 (Admin Mission Control).
 
 ### 3. Routes and screens
 
-`/admin/moderation` (`ModerationQueueScreen`), `/admin/moderation/[id]` (`CaseDetailScreen`), note `FormModal`, decision `ConfirmDialog`.
+- `/admin/moderation` (`ModerationQueueScreen`): queue with status, category and priority filters and server paging.
+- `/admin/moderation/[id]` (`ReportDetailScreen`): report page. Unknown ids show the record-not-found state.
 
 ### 4. User interactions
 
-| Action                                                                                 | Rule                                       | Result                            |
-| -------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------- |
-| Filter priority, status, category, assignee; Open/All toggle; sort priority, submitted | Default: open cases by priority            | Query kept in Redux               |
-| Assign to me / Unassign                                                                | Open cases                                 | New cases move to In review       |
-| Add note                                                                               | 3-1000 characters                          | Internal note, audit event        |
-| Dismiss                                                                                | Open; reason                               | Status Dismissed                  |
-| Issue warning                                                                          | Open; reason                               | +1 strike on the account          |
-| Remove content / Limit content                                                         | Open; case has content; reason             | Content Removed or Limited        |
-| Restrict / Suspend account                                                             | Open; account not pending deletion; reason | Account status changes, +1 strike |
-| Escalate                                                                               | Open, not already escalated; reason        | Status Escalated (stays open)     |
+| Action                                       | Rule                     | Backend                                                                    |
+| -------------------------------------------- | ------------------------ | -------------------------------------------------------------------------- |
+| Filter by status, category, priority (P1–P5) | —                        | `GET /admin/moderation/queue?status_filter&category&priority&limit&offset` |
+| Assign to me / Unassign me                   | Open or in-review report | `POST …/{id}/assign {admin_user_id}`                                       |
+| Add note                                     | 3+ characters            | `POST …/{id}/notes {notes}`                                                |
+| Dismiss report                               | Open or in review        | `POST …/{id}/action {action_name, justification, moderator_notes}`         |
+| Warn, Restrict features, Suspend, Ban        | Report names an account  | same                                                                       |
+| Suppress content                             | Report names a Trend     | same                                                                       |
+
+Every action needs a justification of at least 10 characters (the backend enforces this too). Resolved reports (Action taken, Dismissed) are read-only.
 
 ### 5. Components
 
-`ModerationQueueScreen`, `CaseDetailScreen`, `useCaseActions`, shared components.
+`ModerationQueueScreen` (exports `ReportTarget`, `SlaDeadline`), `ReportDetailScreen`, `ModerationActionModal`; shared `DataTable`, `FilterBar`, `ActionButtons`, `FormModal`.
 
 ### 6. Redux state
 
-`moderation` slice with context `CaseContext` (content, account, prior cases). Thunks `fetchCases`, `fetchCase`, `fetchCaseContext`, `assignCase`, `addCaseNote`, `actOnCase`.
+`moderation` directory slice. Thunks `fetchReports`, `fetchReport`, `assignReport`, `addReportNote`, `actOnReport`. The dashboard uses `openReports` (open + in-review list).
 
 ### 7. Data model
 
-`ModerationCase`: id, category, priority, status, targetType (`content | account | message | room`), contentId, accountId, reportedItemLabel, reporterCount, details, submittedAt, assigned reviewer, notes, history, outcome.
+`ModerationReport`: id, targetTrendId, targetUserId, category, priority (1–5), assignedAdminId/Name/Email, slaDueAt, moderatorNotes, status (`OPEN`, `IN_REVIEW`, `ACTION_TAKEN`, `DISMISSED`), createdAt, resolvedAt.
 
 ### 8. Mock data
 
-`data/mock/moderation.ts`: 119 cases `mod-0929`…`mod-1047`. The number of open cases equals the dashboard's pending KPI (79) and the open-case categories follow the dashboard donut split. `mod-1041`…`mod-1047` match the dashboard's pending list; `mod-1039` matches its "Removed a reported Trend" activity. Closed outcomes point at content and accounts already in the matching state.
+None. The previous mock cases were removed.
 
 ### 9. Service layer
 
-`ModerationService`: `list`, `get`, `getContext`, `assign`, `addNote`, `act`. `act` applies cross-module effects to content and accounts in the shared demo database.
+`ModerationService` in `services/contracts/backendServices.ts`, implemented by `services/api/moderationApi.ts`.
 
 ### 10. Loading and error handling
 
-Standard table and record states; decision buttons disabled with tooltips when not allowed; errors keep dialogs open.
+Table skeleton, inline retry on failure, record-not-found page. Action errors stay in the dialog. If the backend does not clear an assignment, the portal shows an error instead of success.
 
 ### 11. Permissions
 
-View `moderation:view`; assign, notes and decisions `moderation:act` (Super Administrator, Content Moderator).
+View `moderation:view`, act `moderation:act` (Super Administrator, Content Moderator). The backend returns 403 for other roles.
 
 ### 12. Business rules
 
-Reason required for every decision. Closed cases cannot be changed or reassigned. Content actions require a content-linked case. Pending-deletion accounts cannot be restricted or suspended. Notes must not contain sensitive data.
+SLA breaches are highlighted. Priorities are labelled by SLA (1, 4, 12, 24, 48 hours, from `/admin/meta/values`). Actions that need a target are disabled when the report has none.
 
 ### 13. Testing
 
-Browser: queue loads 79 open cases sorted by priority. Script: suspend from case suspends the user; remove from case removes content; acting on a closed case and short reasons are rejected.
+Verified against the backend: filters, paging, single report, assign, note, dismiss, validation error for a short justification. See `BACKEND_INTEGRATION.md`.
 
 ### 14. Files changed
 
-`src/components/moderation/*`, `src/app/admin/(portal)/moderation/**`, `src/features/moderation/*`, `src/data/mock/moderation.ts`, `src/services/mock/moderationService.ts`.
+`src/components/moderation/*`, `src/features/moderation/*`, `src/services/api/moderationApi.ts`, `src/lib/constants/moderationLabels.ts`, `src/app/admin/(portal)/moderation/**`.
 
 ### 15. Backend integration requirements
 
-Proposed: `GET /admin/moderation/cases`, `GET /admin/moderation/cases/{id}`, `.../context`, `POST .../assign`, `POST .../notes`, `POST .../decision {action, reason}`. Reporter identities must never be exposed to the reported user; access to evidence must be logged.
+Reported: unassign with `null` has no effect; actions are accepted on resolved reports. Useful additions: reporter details and report history.
 
 ### 16. Known limitations
 
-No evidence media viewer; dashboard figures do not change after demo decisions; reviewer list is the two demo moderators.
+Reported items show as ids (the backend sends no Trend or account summary). No search by text.

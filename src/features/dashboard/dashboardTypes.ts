@@ -1,5 +1,5 @@
 import type { AsyncStatus, ServiceError } from "@/types/api";
-import type { AdminRole, Permission } from "@/types/auth";
+import type { Permission } from "@/types/auth";
 import type { EntityId, IsoDateString } from "@/types/common";
 
 export type DashboardRange = "7d" | "30d" | "90d";
@@ -11,10 +11,7 @@ export const DASHBOARD_RANGE_DAYS: Record<DashboardRange, number> = {
 };
 
 export type KpiKey =
-  | "registeredUsers"
   | "newRegistrations"
-  | "activeTrends"
-  | "pendingModeration"
   | "activeContests"
   | "premiumSubscriptions"
   | "transactionVolume"
@@ -45,27 +42,7 @@ export interface BreakdownItem {
   value: number;
 }
 
-export interface ActivityItem {
-  id: EntityId;
-  occurredAt: IsoDateString;
-  actorName: string;
-  actorRole: AdminRole;
-  summary: string;
-  href?: string;
-  /** True for events recorded in this browser session by demo actions. */
-  session?: boolean;
-}
-
 export type CasePriority = "critical" | "high" | "medium" | "low";
-
-export interface PendingCase {
-  id: EntityId;
-  category: string;
-  priority: CasePriority;
-  reportedItem: string;
-  submittedAt: IsoDateString;
-  assignedReviewer: string | null;
-}
 
 export interface FinancialException {
   id: EntityId;
@@ -78,13 +55,6 @@ export interface FinancialException {
 }
 
 export type HealthStatus = "operational" | "degraded" | "down";
-
-export interface ServiceHealth {
-  key: string;
-  name: string;
-  status: HealthStatus;
-  detail: string;
-}
 
 export type AlertSeverity = "critical" | "warning" | "info";
 
@@ -108,12 +78,8 @@ export interface DashboardSummary {
   trendActivity: SeriesPoint[];
   /** Daily for 7 and 30 days, weekly (end-aligned) for 90 days, in minor units. */
   transactions: SeriesPoint[];
-  moderationByCategory: BreakdownItem[];
   subscriptionsByPlan: BreakdownItem[];
-  recentActivity: ActivityItem[];
-  pendingModeration: PendingCase[];
   financialExceptions: FinancialException[];
-  systemHealth: ServiceHealth[];
 }
 
 export interface DashboardState {

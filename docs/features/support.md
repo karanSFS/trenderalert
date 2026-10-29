@@ -1,5 +1,7 @@
 # Support
 
+> **Status (2026-10-29):** An Account lookup panel uses the backend (`POST /admin/support/user-lookup`, ticket reference required, masked data). The support case list remains demo data. See [BACKEND_INTEGRATION.md](../BACKEND_INTEGRATION.md).
+
 ### 1. Overview
 
 Support case directory and drawer with assignment, status changes, internal notes and escalation. Member contact details are masked.

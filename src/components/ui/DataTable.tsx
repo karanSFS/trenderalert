@@ -15,6 +15,8 @@ export interface DataTablePagination {
   page: number;
   pageSize: number;
   total: number;
+  /** When false, the total is a lower bound and the footer shows the page number instead. */
+  totalExact?: boolean;
   pageSizeOptions?: number[];
 }
 
@@ -219,7 +221,10 @@ export function DataTable<T extends object>({
                   total: pagination.total,
                   showSizeChanger: true,
                   pageSizeOptions: pagination.pageSizeOptions ?? [10, 20, 50],
-                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
+                  showTotal: (total, range) =>
+                    pagination.totalExact === false
+                      ? `Showing ${range[0]}-${Math.min(range[1], range[0] + data.length - 1)}`
+                      : `${range[0]}-${range[1]} of ${total}`,
                 }
               : false
           }

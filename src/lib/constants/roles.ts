@@ -8,6 +8,19 @@ export const ADMIN_ROLES: AdminRole[] = [
   "contest_admin",
 ];
 
+/** Backend role names (`AdminRoleEnum`) and their portal equivalents. */
+export const ADMIN_ROLE_TO_BACKEND_ROLE: Record<AdminRole, string> = {
+  super_admin: "SUPER_ADMIN",
+  content_moderator: "CONTENT_MODERATOR",
+  support_agent: "SUPPORT_AGENT",
+  finance_admin: "FINANCE_ADMIN",
+  contest_admin: "CONTEST_ADMIN",
+};
+
+export const BACKEND_ROLE_TO_ADMIN_ROLE: Record<string, AdminRole> = Object.fromEntries(
+  Object.entries(ADMIN_ROLE_TO_BACKEND_ROLE).map(([role, backend]) => [backend, role]),
+) as Record<string, AdminRole>;
+
 export const ROLE_LABELS: Record<AdminRole, string> = {
   super_admin: "Super Administrator",
   content_moderator: "Content Moderator",

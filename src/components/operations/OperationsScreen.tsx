@@ -6,14 +6,21 @@ import Link from "next/link";
 import { useEffect } from "react";
 import styled from "styled-components";
 import { MetricCard } from "@/components/dashboard/MetricCard";
+import { DemoDataTag } from "@/components/ui/DemoDataTag";
+import { DetailList } from "@/components/ui/DetailDrawer";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Identity } from "@/components/ui/Identity";
 import { PageSkeleton } from "@/components/ui/LoadingSkeleton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DetailColumn, DetailGrid, SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { selectOperations } from "@/features/moduleSelectors";
+import {
+  selectOperations,
+  selectPlatformHealth,
+  selectPlatformMetrics,
+} from "@/features/moduleSelectors";
 import { acknowledgeIncident, fetchOperations } from "@/features/operations/operationsSlice";
+import { fetchPlatformHealth, fetchPlatformMetrics } from "@/features/platform/platformSlices";
 import type {
   Incident,
   QueueStatus,
@@ -26,8 +33,21 @@ import {
 } from "@/lib/constants/operationalLabels";
 import { formatDateTime } from "@/lib/formatters/date";
 import { formatNumber } from "@/lib/formatters/number";
+import { humanizeCode } from "@/lib/formatters/text";
 import { useDemoAction } from "@/lib/hooks/useDemoAction";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+
+const DemoHeading = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space(2)};
+  margin: ${({ theme }) => theme.space(8)} 0 ${({ theme }) => theme.space(3)};
+
+  h2 {
+    margin: 0;
+    font-size: ${({ theme }) => theme.font.h4};
+  }
+`;
 
 const Banner = styled(Alert)`
   margin-bottom: ${({ theme }) => theme.space(4)};
@@ -118,7 +138,7 @@ export function OperationsScreen() {
       <PageHeader
         eyebrow="Operations"
         title="Operations"
-        subtitle={`Service objectives, queues and incidents. Simulated snapshot as of ${formatDateTime(data.asOf)}.`}
+        subtitle={`Live backend status, then simulated service objectives, queues and incidents (snapshot as of ${formatDateTime(data.asOf)}).`}
         actions={
           <Button
             icon={<ReloadOutlined />}
@@ -129,19 +149,18 @@ export function OperationsScreen() {
           </Button>
         }
       />
+      <LiveStatus />
+      <DemoHeading>
+        <h2>Service objectives, queues and incidents</h2>
+        <DemoDataTag label="Simulated" />
+      </DemoHeading>
       <Banner
         type="warning"
         showIcon
         title="Simulated data"
-        description="No monitoring system is connected. Values are static demo data that match the dashboard health panel; backlog counts come from the demo records."
+        description="No monitoring system is connected yet. Objectives, queues, incidents and these backlog counts are demo data."
       />
       <Metrics>
-        <MetricCard
-          demo
-          label="Open moderation cases"
-          value={formatNumber(backlog.openModerationCases)}
-          href="/admin/moderation"
-        />
         <MetricCard
           demo
           label="Open support cases"
@@ -299,5 +318,101 @@ export function OperationsScreen() {
         </DetailColumn>
       </DetailGrid>
     </>
+  );
+}
+
+/** Live status from `GET /health` and `GET /admin/dashboard/metrics`. */
+function LiveStatus() {
+  const dispatch = useAppDispatch();
+  const health = useAppSelector(selectPlatformHealth);
+  const metrics = useAppSelector(selectPlatformMetrics);
+
+  useEffect(() => {
+    dispatch(fetchPlatformHealth());
+    dispatch(fetchPlatformMetrics());
+  }, [dispatch]);
+
+  const healthy = health.data?.status.toLowerCase() === "healthy";
+  return (
+    <SectionCard
+      title="Live backend status"
+      extra={
+        <Button
+          size="small"
+          icon={<ReloadOutlined />}
+          loading={health.status === "loading" || metrics.status === "loading"}
+          onClick={() => {
+            dispatch(fetchPlatformHealth());
+            dispatch(fetchPlatformMetrics());
+          }}
+        >
+          Check again
+        </Button>
+      }
+    >
+      {health.status === "failed" ? (
+        <Alert
+          type="error"
+          showIcon
+          title="The backend health check failed"
+          description={health.error?.message}
+        />
+      ) : (
+        <DetailList
+          items={[
+            {
+              key: "api",
+              label: "API",
+              value: health.data ? (
+                <StatusBadge
+                  label={healthy ? "Healthy" : humanizeCode(health.data.status)}
+                  tone={healthy ? "success" : "warning"}
+                />
+              ) : (
+                "Checking…"
+              ),
+            },
+            {
+              key: "cache",
+              label: "Cache (Redis)",
+              value:
+                health.data?.redisConnected == null ? (
+                  "—"
+                ) : health.data.redisConnected ? (
+                  <StatusBadge label="Connected" tone="success" />
+                ) : (
+                  <StatusBadge label="Not connected" tone="error" />
+                ),
+            },
+            {
+              key: "version",
+              label: "Service",
+              value: health.data ? `${health.data.service} ${health.data.version}` : "—",
+            },
+            {
+              key: "trends",
+              label: "Active Trends",
+              value: formatNumber(health.data?.activeTrends),
+            },
+            {
+              key: "reports",
+              label: "Open moderation reports",
+              value: formatNumber(metrics.data?.openReports),
+            },
+            { key: "sla", label: "SLA breaches", value: formatNumber(metrics.data?.slaBreaches) },
+            {
+              key: "kill",
+              label: "Kill switches active",
+              value: metrics.data
+                ? metrics.data.activeKillSwitches.length
+                  ? metrics.data.activeKillSwitches.map(humanizeCode).join(", ")
+                  : "None"
+                : "—",
+              wide: true,
+            },
+          ]}
+        />
+      )}
+    </SectionCard>
   );
 }

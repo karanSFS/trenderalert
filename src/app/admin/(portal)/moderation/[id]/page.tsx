@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { CaseDetailScreen } from "@/components/moderation/CaseDetailScreen";
+import { ReportDetailScreen } from "@/components/moderation/ReportDetailScreen";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/admin/moderation/[id]">): Promise<Metadata> {
   const { id } = await params;
-  return { title: `Case ${id}` };
+  return { title: `Report ${id}` };
 }
 
-export default async function CaseDetailPage({ params }: PageProps<"/admin/moderation/[id]">) {
+export default async function ReportDetailPage({ params }: PageProps<"/admin/moderation/[id]">) {
   const { id } = await params;
-  return <CaseDetailScreen id={id} />;
+  return <ReportDetailScreen id={id} />;
 }

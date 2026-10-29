@@ -1,46 +1,93 @@
-import type { EntityId, IsoDateString, TimelineEntry } from "@/types/common";
+import type { EntityId, IsoDateString } from "@/types/common";
 
+/** Backend `TrendStage`. */
 export type TrendStage =
-  "spark" | "rising" | "hot" | "peaking" | "cooling" | "expired" | "ended_early";
+  | "SIGNAL"
+  | "EMERGING"
+  | "RISING"
+  | "BREAKING"
+  | "REGIONAL"
+  | "NATIONAL"
+  | "GLOBAL"
+  | "MAINSTREAM"
+  | "COOLING"
+  | "ARCHIVED"
+  | "DISQUALIFIED";
 
+/** Backend `TrendCategory`. */
+export type TrendCategory =
+  | "Food & Drink"
+  | "Fashion"
+  | "Style"
+  | "Music"
+  | "Tech"
+  | "Wellness"
+  | "Culture"
+  | "Community"
+  | "Sports";
+
+/** Geographic discovery tiers (used by the Discovery relevance settings). */
 export type GeoScope = "near" | "city" | "region" | "nationwide" | "global";
 
-/** Discovery durations allowed at publication (CNT14-002). Never extended afterwards. */
-export type TrendDurationDays = 1 | 3 | 7 | 14 | 30;
-
-export interface TrendRecord {
-  /** Same id as the Trend post in Content. */
+/** A Trend post from `GET /trends/`. */
+export interface TrendPost {
   id: EntityId;
-  topic: string;
-  tags: string[];
-  creatorId: EntityId;
-  creatorUsername: string;
-  geoScope: GeoScope;
-  locationLabel: string;
-  trendScore: number;
+  /** Creator handle as returned by the backend. */
+  creator: string;
+  topicId: string;
+  topicTitle: string;
+  category: string;
+  caption: string;
+  city: string;
+  h3Cell: string;
   stage: TrendStage;
-  publishedAt: IsoDateString;
-  /** Fixed at publication. */
+  trendScore: number;
+  durationHours: number;
+  createdAt: IsoDateString;
+  /** Fixed at publication; never extended. */
   expiresAt: IsoDateString;
-  durationDays: TrendDurationDays;
-  activity: { qualifiedShares: number; participants: number; creators: number; saves: number };
-  featured: boolean;
-  suppressed: boolean;
-  mergedInto: EntityId | null;
-  history: TimelineEntry[];
+  daysLeft: number;
+  firstSpotterBadge: string | null;
 }
 
 export interface TrendFilters {
   stage?: TrendStage;
-  geoScope?: GeoScope;
-  flag?: "featured" | "suppressed" | "merged";
+  category?: TrendCategory;
 }
 
-/** Fields an administrator may correct. Expiration, creator and publish time are excluded (TRND-008). */
-export interface TrendCorrection {
-  topic: string;
-  tags: string[];
-  locationLabel: string;
+/** `GET /trends/topics/{topic_id}/score`. Factor values are weighted points. */
+export interface TrendScoreBreakdown {
+  overall: number;
+  growthVelocity: number;
+  qualifiedReach: number;
+  geographicSpread: number;
+  originality: number;
+  riskPenalty: number;
+  predictionLabel: string;
+  confidencePct: number;
 }
 
-export const ACTIVE_TREND_STAGES: TrendStage[] = ["spark", "rising", "hot", "peaking", "cooling"];
+export interface TrendJourneyStop {
+  city: string;
+  region: string;
+  stage: string;
+  dateReached: string;
+  velocityMultiplier: number;
+  description: string;
+}
+
+/** `GET /radar/journey/{topic_id}`. */
+export interface TrendJourney {
+  topicId: string;
+  topicTitle: string;
+  originCity: string;
+  createdDate: string;
+  currentStage: string;
+  trendScore: number;
+  stops: TrendJourneyStop[];
+}
+
+export interface TrendInsights {
+  score: TrendScoreBreakdown | null;
+  journey: TrendJourney | null;
+}

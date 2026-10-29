@@ -1,22 +1,16 @@
 import {
-  ADMIN_DIRECTORY,
-  APPEALS,
-  AUDIT_HISTORY,
   CONFIGURATION,
   CONTENT,
   CONTESTS,
   COPYRIGHT_CASES,
   DISCOVERY_CONFIG,
-  MODERATION_CASES,
   OPERATIONS_SNAPSHOT,
   RECONCILIATION_RECORDS,
   SUBSCRIPTIONS,
   SUPPORT_CASES,
   TRANSACTIONS,
-  TRENDS,
   USERS,
 } from "@/data/mock";
-import type { Appeal } from "@/features/appeals/appealsTypes";
 import type { AuditEvent } from "@/features/audit/auditTypes";
 import type { ConfigurationData } from "@/features/configuration/configurationTypes";
 import type { ContentItem } from "@/features/content/contentTypes";
@@ -24,11 +18,8 @@ import type { Contest } from "@/features/contests/contestsTypes";
 import type { CopyrightCase } from "@/features/copyright/copyrightTypes";
 import type { DiscoveryConfig } from "@/features/discovery/discoveryTypes";
 import type { ReconciliationRecord, Transaction } from "@/features/finance/financeTypes";
-import type { ModerationCase } from "@/features/moderation/moderationTypes";
-import type { AdminAccount } from "@/features/security/securityTypes";
 import type { Subscription } from "@/features/subscriptions/subscriptionsTypes";
 import type { SupportCase } from "@/features/support/supportTypes";
-import type { TrendRecord } from "@/features/trends/trendsTypes";
 import type { PlatformUser } from "@/features/users/usersTypes";
 import type { TimelineEntry } from "@/types/common";
 import { MockServiceError } from "./mockDelay";
@@ -40,11 +31,9 @@ import { MockServiceError } from "./mockDelay";
 export const db = {
   users: structuredClone(USERS) as PlatformUser[],
   content: structuredClone(CONTENT) as ContentItem[],
-  trends: structuredClone(TRENDS) as TrendRecord[],
-  moderation: structuredClone(MODERATION_CASES) as ModerationCase[],
-  appeals: structuredClone(APPEALS) as Appeal[],
   copyright: structuredClone(COPYRIGHT_CASES) as CopyrightCase[],
-  auditHistory: structuredClone(AUDIT_HISTORY) as AuditEvent[],
+  /** Demo audit events recorded by demo-only modules during this session. */
+  auditHistory: [] as AuditEvent[],
   contests: structuredClone(CONTESTS) as Contest[],
   subscriptions: structuredClone(SUBSCRIPTIONS) as Subscription[],
   transactions: structuredClone(TRANSACTIONS) as Transaction[],
@@ -52,21 +41,9 @@ export const db = {
   support: structuredClone(SUPPORT_CASES) as SupportCase[],
   discovery: structuredClone(DISCOVERY_CONFIG) as DiscoveryConfig,
   configuration: structuredClone(CONFIGURATION) as ConfigurationData,
-  adminUsers: structuredClone(ADMIN_DIRECTORY) as AdminAccount[],
   operations: structuredClone(OPERATIONS_SNAPSHOT),
 };
 
-// Report counts are derived from the cases so the two never disagree.
-for (const user of db.users) {
-  user.reportsReceived = db.moderation
-    .filter((item) => item.accountId === user.id)
-    .reduce((total, item) => total + item.reporterCount, 0);
-}
-for (const item of db.content) {
-  const reports = db.moderation.filter((report) => report.contentId === item.id);
-  if (reports.length > 0)
-    item.reportCount = reports.reduce((total, report) => total + report.reporterCount, 0);
-}
 // Ledger entries linked to an unresolved reconciliation exception are flagged as such.
 for (const record of db.reconciliation) {
   if (record.status === "resolved" || !record.transactionId) continue;

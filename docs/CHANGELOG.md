@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-10-29 — Backend modules connected
+
+**Feature:** Dashboard (live section), Users, Trends, Moderation, Appeals, Feature flags, Discovery ranking, Admin users, Audit logs, Support account lookup and Operations status now use the TrenderAlert backend, with server paging, filters and exact totals where the backend provides them. Their demo data was removed.
+
+**Main files affected**
+
+- Infrastructure: `src/app/api/backend/[...path]/route.ts` (authenticated allow-listed proxy), `src/services/api/http.ts`, `src/lib/hooks/useApiAction.ts`, `src/lib/hooks/useAdminLabel.ts`, session-ended handling in `AdminLayout` and `authSlice`.
+- Services: `services/api/{moderationApi,platformApi,trendsApi,usersApi}.ts`, `services/contracts/backendServices.ts`; mock services for users, moderation, appeals, trends, admin users and audit log deleted.
+- State: rewritten `users`, `trends`, `moderation`, `appeals` slices; new `adminRoles`, `platformMetrics`, `platformHealth`, `featureFlags`, `supportLookup`, `openReports`, `recentAudit`; list state gains `totalExact`.
+- Screens: Users, member detail, Trends, Moderation queue, Report page (new `ReportDetailScreen`, `ModerationActionModal`), Appeals, Feature flags, Discovery ranking (`RankingWeightsTab`), Admin users, Audit logs, Support (`SupportLookupPanel`), Operations, Dashboard.
+- Data removed: mock moderation cases, appeals, Trends, seeded audit history, admin directory, mock flags, ranking proposal, dashboard moderation/activity/health samples.
+
+**Behavior**
+
+- Moderation: filters (status, category, priority), paging with totals, report page with assign to me, notes and six actions with justification.
+- Appeals: status filter, paging, uphold or overturn with a reason.
+- Users: search, status and age filters, member page; contact details masked except for Super Administrator.
+- Trends: search, filters, sort, explainable TrendScore and city journey (read-only).
+- Feature flags: edit on/off, regions and settings JSON with a justification; kill switches shown; paid contests cannot be enabled. Ranking weights are edited on Discovery.
+- Admin users: names and emails, assign, change and revoke roles (never your own).
+- Audit logs: actor and target names, paging, details.
+- `MetricCard` and `ChartCard` only show "Demo data" when marked `demo`.
+
+**Verified**
+
+- Every endpoint through the proxy for all five roles (expected 200 or 403), allow-list and no-session rejection.
+- Actions on test data (see BACKEND_INTEGRATION.md): assign, note, dismiss, validation error, flag save, role re-assign.
+- Browser: dashboard, users, report page, Trends drawer, feature flags, Discovery ranking, admin users, audit logs, support lookup.
+- `lint`, `typecheck`, `build`.
+
+**Known limitations and backend issues:** listed in `BACKEND_INTEGRATION.md`.
+
 ## 2026-10-29 — Backend authentication
 
 **Feature:** The admin sign-in now uses the TrenderAlert backend (`POST /api/v1/auth/login`) for all five roles. The demo account picker and the role switcher are removed.

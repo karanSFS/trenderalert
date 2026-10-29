@@ -1,28 +1,48 @@
 "use client";
 
-import type { TableColumnsType } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
+import { Button, type TableColumnsType } from "antd";
 import { useRouter } from "next/navigation";
-import styled from "styled-components";
 import { DataTable } from "@/components/ui/DataTable";
 import { FilterBar } from "@/components/ui/FilterBar";
+import { Identity } from "@/components/ui/Identity";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RowActions } from "@/components/ui/RowActions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { useConfirm } from "@/components/ui/useConfirm";
+import { usePermission } from "@/features/auth/usePermission";
 import { usersSelectors } from "@/features/moduleSelectors";
 import { fetchUsers, usersActions } from "@/features/users/usersSlice";
-import type { PlatformUser, UserFilters } from "@/features/users/usersTypes";
-import { PLAN_LABELS, toOptions, USER_STATUS, VERIFICATION } from "@/lib/constants/statusLabels";
+import type { DirectoryUser, DirectoryUserFilters } from "@/features/users/usersTypes";
+import { BACKEND_ROLE_TO_ADMIN_ROLE, ROLE_LABELS } from "@/lib/constants/roles";
+import { ACCOUNT_STATUS, accountStatusBadge, toOptions } from "@/lib/constants/statusLabels";
 import { formatDate } from "@/lib/formatters/date";
-import { formatNumber } from "@/lib/formatters/number";
+import { maskEmail, maskPhone } from "@/lib/formatters/text";
 import { useDirectoryList } from "@/lib/hooks/useDirectoryList";
-import { useUserActions } from "./useUserActions";
-import { Identity } from "@/components/ui/Identity";
 
-const Muted = styled.span`
-  font-size: ${({ theme }) => theme.font.sizeSm};
-  color: ${({ theme }) => theme.colors.textSecondary};
-`;
+const MINOR_OPTIONS = [
+  { value: "yes", label: "Minors only" },
+  { value: "no", label: "Adults only" },
+];
+
+export const memberName = (user: DirectoryUser) =>
+  user.displayName || (user.username ? `@${user.username}` : "Unnamed member");
+
+/** Full contact details only for roles that manage accounts; everyone else sees them masked. */
+export function useContactFormatter() {
+  const canSeeContact = usePermission("users:manage");
+  return (user: DirectoryUser) => {
+    if (user.email) return canSeeContact ? user.email : maskEmail(user.email);
+    if (user.phone) return canSeeContact ? user.phone : maskPhone(user.phone);
+    return "No contact on file";
+  };
+}
+
+export const adminRoleLabel = (role: string | null) =>
+  role
+    ? BACKEND_ROLE_TO_ADMIN_ROLE[role]
+      ? ROLE_LABELS[BACKEND_ROLE_TO_ADMIN_ROLE[role]]
+      : role
+    : null;
 
 export function UsersScreen() {
   const router = useRouter();
@@ -31,64 +51,55 @@ export function UsersScreen() {
     fetchUsers,
     usersActions,
   );
-  const { confirm, dialog } = useConfirm();
-  const { rowActions } = useUserActions(confirm, refetch);
+  const contact = useContactFormatter();
+  const openUser = (user: DirectoryUser) => router.push(`/admin/users/${user.id}`);
 
-  const columns: TableColumnsType<PlatformUser> = [
+  const columns: TableColumnsType<DirectoryUser> = [
     {
-      key: "username",
+      key: "member",
       title: "Member",
-      sorter: true,
       render: (_, user) => (
         <Identity>
-          <strong>{user.displayName}</strong>
-          <span>
-            @{user.username} · {user.id}
-          </span>
+          <strong>{memberName(user)}</strong>
+          <span>{user.username ? `@${user.username}` : user.id}</span>
         </Identity>
       ),
     },
+    { key: "contact", title: "Contact", render: (_, user) => contact(user) },
     {
       key: "status",
       title: "Status",
-      render: (_, user) => <StatusBadge {...USER_STATUS[user.status]} />,
+      render: (_, user) => <StatusBadge {...accountStatusBadge(user.accountStatus)} />,
     },
     {
-      key: "plan",
-      title: "Subscription",
+      key: "flags",
+      title: "Flags",
       render: (_, user) => (
-        <Identity>
-          <strong>{PLAN_LABELS[user.subscription.plan]}</strong>
-          {user.subscription.store ? (
-            <span>{user.subscription.store === "ios" ? "App Store" : "Google Play"}</span>
+        <>
+          {user.isMinor ? <StatusBadge label="Minor" tone="warning" /> : null}
+          {user.adminRole ? (
+            <StatusBadge label={adminRoleLabel(user.adminRole) ?? "Admin"} tone="brand" />
           ) : null}
-        </Identity>
+          {!user.isMinor && !user.adminRole ? "—" : null}
+        </>
       ),
     },
     {
-      key: "verification",
-      title: "Verification",
-      render: (_, user) => <StatusBadge {...VERIFICATION[user.verification]} />,
-    },
-    {
-      key: "reportsReceived",
-      title: "Reports",
-      sorter: true,
+      key: "score",
+      title: "Trender score",
       align: "right",
-      render: (_, user) => formatNumber(user.reportsReceived),
+      render: (_, user) => user.trenderScore.toFixed(1),
     },
-    {
-      key: "registeredAt",
-      title: "Registered",
-      sorter: true,
-      render: (_, user) => <Muted>{formatDate(user.registeredAt)}</Muted>,
-    },
+    { key: "joined", title: "Joined", render: (_, user) => formatDate(user.createdAt) },
     {
       key: "actions",
       title: <span className="ta-visually-hidden">Actions</span>,
       width: 56,
       render: (_, user) => (
-        <RowActions ariaLabel={`Actions for @${user.username}`} items={rowActions(user)} />
+        <RowActions
+          ariaLabel={`Actions for ${memberName(user)}`}
+          items={[{ key: "open", label: "Open member", onSelect: () => openUser(user) }]}
+        />
       ),
     },
   ];
@@ -98,42 +109,45 @@ export function UsersScreen() {
       <PageHeader
         eyebrow="Community"
         title="Users"
-        subtitle="Search accounts and apply authorized status changes. The directory shows a sample of 60 fictional demo accounts."
+        subtitle="Member directory from the TrenderAlert backend. Contact details are masked unless your role manages accounts."
+        actions={
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => refetch()}
+            loading={table.status === "loading"}
+          >
+            Refresh
+          </Button>
+        }
       />
-      <DataTable<PlatformUser>
-        ariaLabel="User directory"
+      <DataTable<DirectoryUser>
+        ariaLabel="Members"
         columns={columns}
         rowKey="id"
         {...table}
-        onRowClick={(user) => router.push(`/admin/users/${user.id}`)}
+        pagination={{ ...table.pagination, pageSizeOptions: [10, 20, 50] }}
+        onRowClick={openUser}
         emptyTitle="No members match"
         toolbar={
-          <FilterBar<UserFilters>
+          <FilterBar<DirectoryUserFilters>
             search={{
               ...search,
-              ariaLabel: "Search users",
-              placeholder: "Search username, name or email",
+              ariaLabel: "Search members",
+              placeholder: "Search name, username, email, phone or id",
             }}
             filters={[
-              { type: "select", key: "status", label: "Status", options: toOptions(USER_STATUS) },
               {
                 type: "select",
-                key: "plan",
-                label: "Subscription",
-                options: toOptions(PLAN_LABELS),
+                key: "status",
+                label: "Status",
+                options: toOptions(ACCOUNT_STATUS),
               },
-              {
-                type: "select",
-                key: "verification",
-                label: "Verification",
-                options: toOptions(VERIFICATION),
-              },
+              { type: "select", key: "minor", label: "Age", options: MINOR_OPTIONS },
             ]}
             {...filterBar}
           />
         }
       />
-      {dialog}
     </>
   );
 }

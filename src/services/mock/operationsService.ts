@@ -5,14 +5,11 @@ import { mockRequest } from "./mockDelay";
 
 const SERVICE = "operations";
 
-const OPEN_MODERATION = new Set(["new", "in_review", "escalated"]);
-
 function snapshot(): OperationsSnapshot {
   const { abuseSignals, ...rest } = db.operations;
   return {
     ...rest,
     backlog: {
-      openModerationCases: db.moderation.filter((item) => OPEN_MODERATION.has(item.status)).length,
       openSupportCases: db.support.filter((item) => item.status !== "resolved").length,
       openFinancialExceptions: db.reconciliation.filter((item) => item.status !== "resolved")
         .length,

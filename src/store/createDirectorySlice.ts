@@ -161,6 +161,7 @@ export function createDirectorySlice<T extends { id: EntityId }, TFilters, TCont
             ids: action.payload.items.map((item) => item.id),
             total: action.payload.total,
             page: action.payload.page,
+            totalExact: action.payload.totalExact,
           });
         })
         .addCase(fetchList.rejected, (state, action) => {

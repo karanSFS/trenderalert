@@ -24,15 +24,6 @@ export const endAnnouncement = configurationModule.createSave<EntityId>(
   (id, actor) => configurationService.endAnnouncement(id, actor),
 );
 
-export const updateFeatureFlag = configurationModule.createSave<{
-  key: string;
-  enabled: boolean;
-  rollout: number;
-  reason: string;
-}>("flag", ({ key, enabled, rollout, reason }, actor) =>
-  configurationService.updateFlag(key, { enabled, rollout }, reason, actor),
-);
-
 export const fetchConfiguration = configurationModule.fetchDocument;
 export const configurationActions = configurationModule.actions;
 export default configurationModule.reducer;

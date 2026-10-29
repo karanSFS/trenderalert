@@ -1,5 +1,5 @@
 import type { ConfigurationService } from "@/services/contracts/operationalServices";
-import { assertEligible, assertReason, assertValid, db } from "./db";
+import { assertEligible, assertValid, db } from "./db";
 import { mockRequest } from "./mockDelay";
 
 const SERVICE = "configuration";
@@ -96,41 +96,6 @@ export const mockConfigurationService: ConfigurationService = {
         item!.status = "ended";
         item!.endsAt = new Date().toISOString();
         item!.updatedBy = actor.name;
-        return db.configuration;
-      },
-      { service: SERVICE },
-    ),
-
-  updateFlag: (key, change, reason, actor) =>
-    mockRequest(
-      () => {
-        const flag = db.configuration.flags.find((item) => item.key === key);
-        assertValid(Boolean(flag), `Feature flag ${key} was not found.`);
-        assertReason(reason);
-        assertValid(
-          Number.isInteger(change.rollout) && change.rollout >= 0 && change.rollout <= 100,
-          "Rollout must be a whole percentage from 0 to 100.",
-        );
-        const turningOn = change.enabled && change.rollout > 0;
-        if (turningOn) {
-          const missing = flag!.gates.filter((gate) => !gate.satisfied);
-          assertEligible(
-            !flag!.activationGated || missing.length === 0,
-            `${flag!.name} cannot be enabled. Outstanding gates: ${missing.map((gate) => gate.label).join(", ")}.`,
-          );
-          assertEligible(
-            missing.length === 0 || change.rollout <= flag!.rollout,
-            `Increase blocked until these gates are recorded: ${missing.map((gate) => gate.label).join(", ")}.`,
-          );
-        }
-        assertEligible(
-          flag!.enabled !== change.enabled || flag!.rollout !== change.rollout,
-          "Nothing changed.",
-        );
-        flag!.enabled = change.enabled;
-        flag!.rollout = change.enabled ? change.rollout : 0;
-        flag!.updatedAt = new Date().toISOString();
-        flag!.updatedBy = actor.name;
         return db.configuration;
       },
       { service: SERVICE },

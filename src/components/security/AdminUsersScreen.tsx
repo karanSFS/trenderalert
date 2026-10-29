@@ -1,173 +1,166 @@
 "use client";
 
-import { SafetyCertificateOutlined, UserAddOutlined, WarningOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Select, type TableColumnsType } from "antd";
-import { useEffect, useState } from "react";
-import { ActionButtons } from "@/components/ui/ActionButtons";
+import {
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+  UserAddOutlined,
+  WarningOutlined,
+} from "@ant-design/icons";
+import { Alert, Button, Form, Input, Select, Switch, type TableColumnsType } from "antd";
+import { useState } from "react";
+import styled from "styled-components";
+import { Can } from "@/components/auth/Can";
 import { DataTable } from "@/components/ui/DataTable";
-import { DetailDrawer, DetailList, DetailSection } from "@/components/ui/DetailDrawer";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { FormModal } from "@/components/ui/FormModal";
 import { Identity } from "@/components/ui/Identity";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { RowActions, type RowActionItem } from "@/components/ui/RowActions";
+import { RowActions } from "@/components/ui/RowActions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Timeline } from "@/components/ui/Timeline";
 import { useConfirm } from "@/components/ui/useConfirm";
 import { selectCurrentAdmin } from "@/features/auth/authSelectors";
-import { adminUsersSelectors } from "@/features/moduleSelectors";
+import { adminRolesSelectors } from "@/features/moduleSelectors";
 import {
-  adminUsersActions,
-  changeAdminRole,
-  fetchAdminUser,
-  fetchAdminUsers,
-  inviteAdmin,
-  setAdminActive,
-} from "@/features/security/adminUsersSlice";
+  adminRolesActions,
+  assignAdminRole,
+  fetchAdminRoles,
+  revokeAdminRole,
+} from "@/features/security/adminRolesSlice";
 import type {
-  AdminAccount,
-  AdminAccountFilters,
-  AdminInvite,
+  AdminRoleAssignment,
+  AdminRoleFilters,
+  AssignRoleRequest,
 } from "@/features/security/securityTypes";
-import { ADMIN_STATUS } from "@/lib/constants/operationalLabels";
 import { ADMIN_ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/constants/roles";
-import { toOptions } from "@/lib/constants/statusLabels";
 import { formatDateTime } from "@/lib/formatters/date";
-import { useDemoAction } from "@/lib/hooks/useDemoAction";
+import { useApiAction } from "@/lib/hooks/useApiAction";
 import { useDirectoryList } from "@/lib/hooks/useDirectoryList";
-import { useOpenParam } from "@/lib/hooks/useOpenParam";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import type { AdminRole } from "@/types/auth";
 
 const ROLE_OPTIONS = ADMIN_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }));
+const STATE_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+];
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const Notice = styled(Alert)`
+  margin-bottom: ${({ theme }) => theme.space(4)};
+`;
+
+const Mono = styled.span`
+  font-family: var(--font-geist-mono), monospace;
+  font-size: ${({ theme }) => theme.font.sizeSm};
+`;
 
 function MfaBadge({ enabled }: { enabled: boolean }) {
   return enabled ? (
-    <StatusBadge label="MFA on" tone="success" icon={<SafetyCertificateOutlined />} />
+    <StatusBadge label="MFA required" tone="success" icon={<SafetyCertificateOutlined />} />
   ) : (
-    <StatusBadge label="MFA not enrolled" tone="warning" icon={<WarningOutlined />} />
+    <StatusBadge label="MFA not required" tone="warning" icon={<WarningOutlined />} />
   );
 }
 
+type Editing = { mode: "assign" } | { mode: "change"; assignment: AdminRoleAssignment } | null;
+
 export function AdminUsersScreen() {
   const dispatch = useAppDispatch();
-  const admin = useAppSelector(selectCurrentAdmin);
+  const me = useAppSelector(selectCurrentAdmin);
   const { table, search, filterBar, refetch } = useDirectoryList(
-    adminUsersSelectors,
-    fetchAdminUsers,
-    adminUsersActions,
+    adminRolesSelectors,
+    fetchAdminRoles,
+    adminRolesActions,
   );
-  const [openId, setOpenId] = useOpenParam();
-  const [inviting, setInviting] = useState(false);
-  const [roleTarget, setRoleTarget] = useState<AdminAccount | null>(null);
+  const [editing, setEditing] = useState<Editing>(null);
+  const { run } = useApiAction();
+  const changing = editing?.mode === "change" ? editing.assignment : null;
   const { confirm, dialog } = useConfirm();
-  const { run } = useDemoAction();
 
-  const after = () => {
-    refetch();
-    if (openId) dispatch(fetchAdminUser(openId));
-  };
-
-  const setActive = (account: AdminAccount, active: boolean) =>
+  const revoke = (item: AdminRoleAssignment) =>
     confirm({
-      title: `${active ? "Reactivate" : "Deactivate"} ${account.displayName}`,
-      consequences: active
-        ? [
-            "The administrator can sign in again with their existing role.",
-            "MFA is required at the next sign-in.",
-          ]
-        : [
-            "Active sessions end and sign-in is blocked.",
-            "Their past actions stay in the audit log.",
-          ],
-      confirmLabel: active ? "Reactivate" : "Deactivate",
-      danger: !active,
-      requireReason: true,
+      title: `Revoke ${item.role ? ROLE_LABELS[item.role] : item.roleName} from ${item.userName ?? item.userId}`,
+      description: item.userEmail ?? item.userId,
+      consequences: [
+        "The account loses all administrator access on its next request.",
+        "The account itself stays active as a member account.",
+      ],
+      confirmLabel: "Revoke role",
+      danger: true,
+      requireReason: { label: "Justification (written to the audit log)" },
       onConfirm: (reason) =>
-        run(dispatch(setAdminActive({ id: account.id, active, reason: reason ?? "" })).unwrap(), {
-          success: `${account.displayName} ${active ? "reactivated" : "deactivated"}`,
-          audit: (updated) => ({
-            action: active ? "adminUser.reactivate" : "adminUser.deactivate",
-            targetType: "adminUser",
-            targetId: updated.id,
-            summary: `${active ? "Reactivated" : "Deactivated"} administrator ${updated.displayName}`,
-            reason,
-          }),
-          after,
-        }),
+        run(
+          dispatch(revokeAdminRole({ userId: item.userId, justification: reason ?? "" })).unwrap(),
+          {
+            success: "Role revoked",
+            after: () => refetch(),
+          },
+        ),
     });
 
-  const actionItems = (account: AdminAccount): RowActionItem[] => {
-    const self = account.id === admin?.id;
-    return [
-      {
-        key: "role",
-        label: "Change role…",
-        permission: "security:manage-admins",
-        disabled: self || account.status === "deactivated",
-        disabledReason: self ? "You cannot change your own role." : "Reactivate the account first.",
-        onSelect: () => setRoleTarget(account),
-      },
-      account.status === "deactivated"
-        ? {
-            key: "reactivate",
-            label: "Reactivate",
-            permission: "security:manage-admins",
-            disabled: self,
-            disabledReason: "You cannot change your own account status.",
-            onSelect: () => setActive(account, true),
-          }
-        : {
-            key: "deactivate",
-            label: "Deactivate",
-            permission: "security:manage-admins",
-            danger: true,
-            disabled: self,
-            disabledReason: "You cannot deactivate your own account.",
-            onSelect: () => setActive(account, false),
-          },
-    ];
-  };
-
-  const columns: TableColumnsType<AdminAccount> = [
+  const columns: TableColumnsType<AdminRoleAssignment> = [
     {
-      key: "displayName",
+      key: "user",
       title: "Administrator",
-      sorter: true,
-      render: (_, account) => (
+      render: (_, item) => (
         <Identity>
           <strong>
-            {account.displayName}
-            {account.id === admin?.id ? " (you)" : ""}
+            {item.userName ?? "Unnamed administrator"}
+            {item.userId === me?.id ? " (you)" : ""}
           </strong>
-          <span>{account.email}</span>
+          <span>{item.userEmail ?? <Mono>{item.userId}</Mono>}</span>
         </Identity>
       ),
     },
-    { key: "role", title: "Role", render: (_, account) => ROLE_LABELS[account.role] },
     {
-      key: "status",
+      key: "role",
+      title: "Role",
+      render: (_, item) => (item.role ? ROLE_LABELS[item.role] : item.roleName),
+    },
+    {
+      key: "state",
       title: "Status",
-      render: (_, account) => <StatusBadge {...ADMIN_STATUS[account.status]} />,
+      render: (_, item) => (
+        <StatusBadge
+          label={item.isActive ? "Active" : "Inactive"}
+          tone={item.isActive ? "success" : "neutral"}
+        />
+      ),
     },
-    { key: "mfa", title: "MFA", render: (_, account) => <MfaBadge enabled={account.mfaEnabled} /> },
+    { key: "mfa", title: "MFA", render: (_, item) => <MfaBadge enabled={item.mfaEnabled} /> },
     {
-      key: "lastActiveAt",
-      title: "Last active",
-      sorter: true,
-      render: (_, account) =>
-        account.lastActiveAt ? formatDateTime(account.lastActiveAt) : "Never",
+      key: "reauth",
+      title: "Last re-authentication",
+      render: (_, item) => (item.lastReauthAt ? formatDateTime(item.lastReauthAt) : "Never"),
     },
+    { key: "created", title: "Assigned", render: (_, item) => formatDateTime(item.createdAt) },
     {
       key: "actions",
       title: <span className="ta-visually-hidden">Actions</span>,
       width: 56,
-      render: (_, account) => (
+      render: (_, item) => (
         <RowActions
-          ariaLabel={`Actions for ${account.displayName}`}
+          ariaLabel={`Actions for ${item.userId}`}
           items={[
-            { key: "view", label: "View administrator", onSelect: () => setOpenId(account.id) },
-            ...actionItems(account),
+            {
+              key: "change",
+              label: "Change role…",
+              permission: "security:manage-admins",
+              disabled: item.userId === me?.id,
+              disabledReason: "You cannot change your own role.",
+              onSelect: () => setEditing({ mode: "change", assignment: item }),
+            },
+            {
+              key: "revoke",
+              label: "Revoke role",
+              permission: "security:manage-admins",
+              danger: true,
+              disabled: item.userId === me?.id || !item.isActive,
+              disabledReason:
+                item.userId === me?.id
+                  ? "You cannot revoke your own role."
+                  : "This role is already inactive.",
+              onSelect: () => revoke(item),
+            },
           ]}
         />
       ),
@@ -179,198 +172,118 @@ export function AdminUsersScreen() {
       <PageHeader
         eyebrow="Security"
         title="Admin users"
-        subtitle="Named administrator accounts and their roles. Credentials are never stored or shown; in production, sign-in and MFA are enforced by the backend."
+        subtitle="Administrator role assignments from the TrenderAlert backend. Only a Super Administrator can assign roles."
         actions={
-          <Button type="primary" icon={<UserAddOutlined />} onClick={() => setInviting(true)}>
-            Invite administrator
-          </Button>
+          <>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => refetch()}
+              loading={table.status === "loading"}
+            >
+              Refresh
+            </Button>
+            <Can permission="security:manage-admins">
+              <Button
+                type="primary"
+                icon={<UserAddOutlined />}
+                onClick={() => setEditing({ mode: "assign" })}
+              >
+                Assign role
+              </Button>
+            </Can>
+          </>
         }
       />
-      <DataTable<AdminAccount>
-        ariaLabel="Administrators"
+      <Notice
+        type="info"
+        showIcon
+        title="Roles are enforced by the backend"
+        description="Changes take effect on the administrator's next request. You cannot change or revoke your own role."
+      />
+      <DataTable<AdminRoleAssignment>
+        ariaLabel="Administrator roles"
         columns={columns}
         rowKey="id"
         {...table}
-        onRowClick={(account) => setOpenId(account.id)}
-        emptyTitle="No administrators match"
+        emptyTitle="No role assignments match"
         toolbar={
-          <FilterBar<AdminAccountFilters>
+          <FilterBar<AdminRoleFilters>
             search={{
               ...search,
               ariaLabel: "Search administrators",
-              placeholder: "Search name or email",
+              placeholder: "Search name, email or user id",
             }}
             filters={[
               { type: "select", key: "role", label: "Role", options: ROLE_OPTIONS, width: 220 },
-              { type: "select", key: "status", label: "Status", options: toOptions(ADMIN_STATUS) },
+              { type: "select", key: "state", label: "Status", options: STATE_OPTIONS },
             ]}
             {...filterBar}
           />
         }
       />
-      <AdminDrawer id={openId} onClose={() => setOpenId(null)} actionItems={actionItems} />
 
-      <FormModal<AdminInvite>
-        open={inviting}
-        title="Invite administrator"
-        description="Records an invitation in the demo. No email is sent. Use a fictional @demo.trenderalert.test address."
-        submitLabel="Record invitation"
-        initialValues={{ role: "support_agent" }}
-        onClose={() => setInviting(false)}
+      <FormModal<AssignRoleRequest>
+        open={editing !== null}
+        title={changing ? "Change role" : "Assign administrator role"}
+        description={
+          changing
+            ? `Current role: ${changing.role ? ROLE_LABELS[changing.role] : changing.roleName}. The change applies to the account's next request.`
+            : "Grants an administrator role to an existing TrenderAlert account."
+        }
+        submitLabel={changing ? "Change role" : "Assign role"}
+        initialValues={
+          changing
+            ? {
+                userId: changing.userId,
+                role: changing.role ?? undefined,
+                mfaEnabled: changing.mfaEnabled,
+              }
+            : { mfaEnabled: true }
+        }
+        onClose={() => setEditing(null)}
         onSubmit={async (values) => {
-          await run(dispatch(inviteAdmin(values)).unwrap(), {
-            success: `Invitation recorded for ${values.displayName.trim()}`,
-            audit: (created) => ({
-              action: "adminUser.invite",
-              targetType: "adminUser",
-              targetId: created.id,
-              summary: `Invited ${created.displayName} as ${ROLE_LABELS[created.role]}`,
-            }),
+          const userId = values.userId.trim();
+          await run(dispatch(assignAdminRole({ ...values, userId })).unwrap(), {
+            success: `${ROLE_LABELS[values.role]} assigned`,
             after: () => refetch(),
           });
         }}
       >
         <Form.Item
-          name="displayName"
-          label="Full name"
-          rules={[{ required: true, whitespace: true, min: 3, max: 80 }]}
-        >
-          <Input maxLength={80} />
-        </Form.Item>
-        <Form.Item
-          name="email"
-          label="Work email"
+          name="userId"
+          label="User id"
           rules={[
-            { required: true, type: "email", message: "Enter a valid email address." },
+            { required: true, message: "Enter the account's user id." },
+            { pattern: UUID_PATTERN, message: "Enter a valid user id (UUID)." },
             {
               validator: (_, value?: string) =>
-                !value || value.trim().toLowerCase().endsWith("@demo.trenderalert.test")
-                  ? Promise.resolve()
-                  : Promise.reject(new Error("Use a fictional @demo.trenderalert.test address.")),
+                value?.trim() === me?.id
+                  ? Promise.reject(new Error("You cannot change your own role."))
+                  : Promise.resolve(),
             },
           ]}
         >
-          <Input placeholder="name@demo.trenderalert.test" />
+          <Input disabled={Boolean(changing)} placeholder="00000000-0000-0000-0000-000000000000" />
         </Form.Item>
-        <Form.Item name="role" label="Role" rules={[{ required: true }]}>
-          <Select options={ROLE_OPTIONS} />
-        </Form.Item>
-      </FormModal>
-
-      <FormModal<{ role: AdminRole; reason: string }>
-        open={roleTarget !== null}
-        title={roleTarget ? `Change role for ${roleTarget.displayName}` : "Change role"}
-        description={
-          roleTarget
-            ? `Current role: ${ROLE_LABELS[roleTarget.role]}. The new role applies at their next request.`
-            : undefined
-        }
-        submitLabel="Change role"
-        initialValues={roleTarget ? { role: roleTarget.role } : undefined}
-        onClose={() => setRoleTarget(null)}
-        onSubmit={async ({ role, reason }) => {
-          if (!roleTarget) return;
-          await run(dispatch(changeAdminRole({ id: roleTarget.id, role, reason })).unwrap(), {
-            success: `${roleTarget.displayName} is now ${ROLE_LABELS[role]}`,
-            audit: (updated) => ({
-              action: "adminUser.change_role",
-              targetType: "adminUser",
-              targetId: updated.id,
-              summary: `Changed ${updated.displayName}'s role from ${ROLE_LABELS[roleTarget.role]} to ${ROLE_LABELS[role]}`,
-              reason,
-            }),
-            after,
-          });
-        }}
-      >
-        <Form.Item
-          name="role"
-          label="New role"
-          rules={[{ required: true }]}
-          extra="Each role grants only the permissions its job needs."
-        >
+        <Form.Item name="role" label="Role" rules={[{ required: true, message: "Choose a role." }]}>
           <Select
             options={ROLE_OPTIONS.map((option) => ({
               ...option,
               title: ROLE_DESCRIPTIONS[option.value],
             }))}
+            placeholder="Choose a role"
           />
         </Form.Item>
         <Form.Item
-          name="reason"
-          label="Reason"
-          rules={[
-            { required: true, whitespace: true, min: 10, message: "Enter at least 10 characters." },
-          ]}
+          name="mfaEnabled"
+          label="Require MFA"
+          valuePropName="checked"
+          extra="Strongly recommended for every administrator."
         >
-          <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} maxLength={500} showCount />
+          <Switch />
         </Form.Item>
       </FormModal>
       {dialog}
     </>
-  );
-}
-
-function AdminDrawer({
-  id,
-  onClose,
-  actionItems,
-}: {
-  id: string | null;
-  onClose: () => void;
-  actionItems: (account: AdminAccount) => RowActionItem[];
-}) {
-  const dispatch = useAppDispatch();
-  const account = useAppSelector((state) => adminUsersSelectors.selectById(state, id));
-  const detail = useAppSelector(adminUsersSelectors.selectDetail);
-
-  useEffect(() => {
-    if (id) dispatch(fetchAdminUser(id));
-  }, [dispatch, id]);
-
-  return (
-    <DetailDrawer
-      open={Boolean(id)}
-      onClose={onClose}
-      title={account?.displayName ?? id ?? ""}
-      subtitle={account ? `${account.email} · Demo account` : undefined}
-      status={account ? <StatusBadge {...ADMIN_STATUS[account.status]} /> : null}
-      loadStatus={account ? "succeeded" : detail.id === id ? detail.status : "loading"}
-      error={detail.error}
-      onRetry={() => id && dispatch(fetchAdminUser(id))}
-      actions={account ? <ActionButtons items={actionItems(account)} /> : null}
-    >
-      {account ? (
-        <>
-          <DetailSection title="Access">
-            <DetailList
-              items={[
-                { key: "role", label: "Role", value: ROLE_LABELS[account.role] },
-                {
-                  key: "mfa",
-                  label: "Multi-factor authentication",
-                  value: <MfaBadge enabled={account.mfaEnabled} />,
-                },
-                {
-                  key: "scope",
-                  label: "Role scope",
-                  value: ROLE_DESCRIPTIONS[account.role],
-                  wide: true,
-                },
-                { key: "created", label: "Created", value: formatDateTime(account.createdAt) },
-                {
-                  key: "active",
-                  label: "Last active",
-                  value: account.lastActiveAt ? formatDateTime(account.lastActiveAt) : "Never",
-                },
-              ]}
-            />
-          </DetailSection>
-          <DetailSection title="Account history">
-            <Timeline entries={account.history} />
-          </DetailSection>
-        </>
-      ) : null}
-    </DetailDrawer>
   );
 }

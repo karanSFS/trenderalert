@@ -1,41 +1,28 @@
-import type { ModerationActionType } from "@/features/moderation/moderationTypes";
-import type { EntityId, IsoDateString, TimelineEntry } from "@/types/common";
+import type { EntityId, IsoDateString } from "@/types/common";
 
-export type AppealStatus = "pending" | "in_review" | "upheld" | "reversed";
-
-export interface AppealEvidence {
-  id: EntityId;
-  kind: "statement" | "screenshot" | "link";
-  label: string;
-  summary: string;
-}
+/** Backend `AppealStatusEnum`. */
+export type AppealStatus = "SUBMITTED" | "IN_REVIEW" | "UPHELD" | "OVERTURNED";
+export type AppealOutcome = "UPHELD" | "OVERTURNED";
 
 export interface Appeal {
   id: EntityId;
-  caseId: EntityId;
-  userId: EntityId;
-  username: string;
-  originalDecision: {
-    action: ModerationActionType;
-    reason: string;
-    decidedAt: IsoDateString;
-    decidedBy: string;
-  };
-  appealReason: string;
-  evidence: AppealEvidence[];
+  /** The moderation report the appeal challenges. */
+  reportId: EntityId;
+  appellantUserId: EntityId;
+  appellantName: string | null;
+  appellantEmail: string | null;
+  statement: string;
+  evidenceAssets: string[];
+  assignedAdminId: EntityId | null;
   status: AppealStatus;
-  assignedReviewerName: string | null;
+  resolutionReason: string | null;
   submittedAt: IsoDateString;
-  history: TimelineEntry[];
-  decision: {
-    outcome: "upheld" | "reversed";
-    reason: string;
-    at: IsoDateString;
-    by: string;
-  } | null;
+  resolvedAt: IsoDateString | null;
 }
 
 export interface AppealFilters {
   status?: AppealStatus;
-  action?: ModerationActionType;
 }
+
+export const isAppealOpen = (appeal: Appeal) =>
+  appeal.status === "SUBMITTED" || appeal.status === "IN_REVIEW";

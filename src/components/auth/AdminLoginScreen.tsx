@@ -202,7 +202,11 @@ export function AdminLoginScreen() {
             <ErrorAlert
               type="warning"
               showIcon
-              title="Your previous session could not be checked"
+              title={
+                sessionError.code === "UNAUTHENTICATED"
+                  ? "Your session has ended"
+                  : "Your previous session could not be checked"
+              }
               description={sessionError.message}
             />
           ) : null}

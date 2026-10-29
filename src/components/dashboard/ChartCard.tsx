@@ -21,6 +21,7 @@ interface ChartCardProps {
   emptyDescription?: ReactNode;
   /** Chart area height in px; also the minimum height of every state. */
   height?: number;
+  /** Shows the "Demo data" tag for charts that are not from the backend. */
   demo?: boolean;
   /** Short text alternative describing what the chart shows. */
   summary?: string;
@@ -97,7 +98,7 @@ export function ChartCard({
   isEmpty = false,
   emptyDescription = "There is no data for the selected period.",
   height = 280,
-  demo = true,
+  demo = false,
   summary,
   children,
 }: ChartCardProps) {

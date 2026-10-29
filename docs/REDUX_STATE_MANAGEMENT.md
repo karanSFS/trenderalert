@@ -26,6 +26,15 @@ Module slices, one per domain (there is no single application-wide slice):
 | `contests`, `subscriptions`, `transactions`, `reconciliation`, `support`, `adminUsers`, `auditLog` | `createDirectorySlice` | 6     |
 | `discovery`, `configuration`, `operations`, `financeOverview`                                      | `createDocumentSlice`  | 6     |
 
+### Backend-connected slices (2026-10-29)
+
+| Key                                                                                                | Built with                                                    | Source                              |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------- |
+| `users`, `trends`, `moderation`, `appeals`, `adminRoles`, `auditLog`                               | `createDirectorySlice`                                        | Backend services in `services/api/` |
+| `platformMetrics`, `platformHealth`, `featureFlags`, `supportLookup`, `openReports`, `recentAudit` | `createDocumentSlice` (`features/platform/platformSlices.ts`) | Backend services                    |
+
+List state carries `totalExact`: false when the backend gives no total, so the table footer shows the visible range instead of "of N".
+
 ## List state pattern
 
 Directory screens keep their query in Redux so search, filters, sorting and pagination survive navigating to a detail page and back. Use `src/store/listState.ts`:

@@ -1,5 +1,7 @@
 # Mock Data Guide
 
+> Removed on 2026-10-29 because the screens now use the backend: `moderation.ts`, `appeals.ts`, `trends.ts`, `auditHistory.ts`, `adminDirectory.ts`, the mock feature flags in `configuration.ts`, the ranking proposal in `discovery.ts`, and the dashboard's pending-moderation, admin-activity and system-health samples. `users.ts` stays only as the source of fictional members inside other demo modules.
+
 ## Where mock data lives
 
 `src/data/mock/` contains one file per entity type, re-exported from `src/data/mock/index.ts`. Only the mock services in `src/services/mock/` may import it. Components and slices never import mock data; reference lists such as support agents come through services (`useLookup`). Known exceptions to clean up: `DEMO_AS_OF` from `seed.ts` (a constant used for relative dates) and `MODERATION_REVIEWERS` in `useCaseActions` (Phase 5).

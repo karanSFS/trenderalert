@@ -1,22 +1,4 @@
-import type {
-  ConfigurationData,
-  FlagGate,
-  FlagGateId,
-} from "@/features/configuration/configurationTypes";
-
-const GATE_LABELS: Record<FlagGateId, string> = {
-  legal: "Legal approval",
-  payment_provider: "Payment provider approval",
-  store_policy: "App store policy review",
-  fraud_controls: "Fraud and abuse controls",
-  official_rules: "Official rules template",
-  operations: "Operations readiness",
-  data_quality: "Data quality review",
-  safety_review: "Safety review",
-};
-
-const gates = (entries: [FlagGateId, boolean][]): FlagGate[] =>
-  entries.map(([id, satisfied]) => ({ id, label: GATE_LABELS[id], satisfied }));
+import type { ConfigurationData } from "@/features/configuration/configurationTypes";
 
 /** Fictional configuration. Prices are configured in the stores and are never stored here. */
 export const CONFIGURATION: ConfigurationData = {
@@ -125,87 +107,6 @@ export const CONFIGURATION: ConfigurationData = {
       effectiveAt: null,
       requiresRenewedConsent: false,
       summary: "Retention schedule proposal (owner decision D-10).",
-    },
-  ],
-  flags: [
-    {
-      key: "trend_rooms",
-      name: "Trend Rooms",
-      description: "Group spaces attached to a Trend.",
-      enabled: true,
-      rollout: 50,
-      audience: "Test market: Brightwater",
-      owner: "Product",
-      activationGated: false,
-      gates: gates([
-        ["safety_review", true],
-        ["operations", true],
-      ]),
-      updatedAt: "2026-10-26T16:00:00Z",
-      updatedBy: "Avery Collins",
-    },
-    {
-      key: "paid_contests",
-      name: "Paid contests",
-      description:
-        "Paid-entry contests with cash prizes. Off until every gate is approved by the backend.",
-      enabled: false,
-      rollout: 0,
-      audience: "None",
-      owner: "Contest Programs",
-      activationGated: true,
-      gates: gates([
-        ["legal", false],
-        ["payment_provider", false],
-        ["store_policy", false],
-        ["fraud_controls", false],
-        ["official_rules", false],
-        ["operations", false],
-      ]),
-      updatedAt: "2026-09-12T10:00:00Z",
-      updatedBy: "Avery Collins",
-    },
-    {
-      key: "creator_verification",
-      name: "Creator verification badges",
-      description: "Show verified badges on approved creator profiles.",
-      enabled: true,
-      rollout: 100,
-      audience: "All members",
-      owner: "Trust & Safety",
-      activationGated: false,
-      gates: gates([["safety_review", true]]),
-      updatedAt: "2026-08-02T12:00:00Z",
-      updatedBy: "Avery Collins",
-    },
-    {
-      key: "regional_heatmap",
-      name: "Regional heat map",
-      description: "Aggregated heat map of Trend activity by approximate area.",
-      enabled: false,
-      rollout: 0,
-      audience: "Internal testers",
-      owner: "Discovery",
-      activationGated: false,
-      gates: gates([
-        ["data_quality", false],
-        ["safety_review", true],
-      ]),
-      updatedAt: "2026-10-10T09:30:00Z",
-      updatedBy: "Avery Collins",
-    },
-    {
-      key: "smart_reminders",
-      name: "Smart expiry reminders",
-      description: "Pre-expiration reminder timed to the creator's activity.",
-      enabled: true,
-      rollout: 25,
-      audience: "Premium members",
-      owner: "Product",
-      activationGated: false,
-      gates: gates([["operations", true]]),
-      updatedAt: "2026-10-18T14:20:00Z",
-      updatedBy: "Avery Collins",
     },
   ],
 };

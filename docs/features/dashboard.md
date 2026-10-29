@@ -1,5 +1,7 @@
 # Admin Dashboard and Notification Bell
 
+> **Status (2026-10-29):** The dashboard now opens with a live section from the backend (metrics, health, open reports, report categories, recent audit activity). The KPIs, charts and panels below it remain labelled demo data. See [BACKEND_INTEGRATION.md](../BACKEND_INTEGRATION.md).
+
 ### 1. Overview
 
 `/admin/dashboard` shows platform status at a glance: KPI cards, charts and operational panels for the selected period. The header bell lists operational alerts. Every figure is fictional demo data, labeled as such, and filtered by the current demo role.

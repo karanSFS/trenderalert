@@ -1,10 +1,9 @@
 import { contentService } from "@/services";
-import type { ContentContext } from "@/services/contracts/moduleServices";
 import { createDirectorySlice } from "@/store/createDirectorySlice";
 import type { EntityId } from "@/types/common";
 import type { ContentAction, ContentFilters, ContentItem } from "./contentTypes";
 
-export const contentModule = createDirectorySlice<ContentItem, ContentFilters, ContentContext>({
+export const contentModule = createDirectorySlice<ContentItem, ContentFilters>({
   name: "content",
   service: contentService,
   initialFilters: {
@@ -14,7 +13,6 @@ export const contentModule = createDirectorySlice<ContentItem, ContentFilters, C
     creatorId: undefined,
   },
   list: { sortField: "publishedAt", sortOrder: "descend" },
-  getContext: (id) => contentService.getContext(id),
 });
 
 export const moderateContent = contentModule.createMutation<{
@@ -26,9 +24,5 @@ export const moderateContent = contentModule.createMutation<{
 );
 
 export const contentActions = contentModule.actions;
-export const {
-  fetchList: fetchContentList,
-  fetchOne: fetchContentItem,
-  fetchContext: fetchContentContext,
-} = contentModule;
+export const { fetchList: fetchContentList, fetchOne: fetchContentItem } = contentModule;
 export default contentModule.reducer;

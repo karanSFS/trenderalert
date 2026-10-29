@@ -7,6 +7,7 @@ import styled from "styled-components";
 import { Can } from "@/components/auth/Can";
 import { ActionButtons } from "@/components/ui/ActionButtons";
 import { DataTable } from "@/components/ui/DataTable";
+import { DemoDataTag } from "@/components/ui/DemoDataTag";
 import { DetailDrawer, DetailList, DetailSection } from "@/components/ui/DetailDrawer";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { EntityLink } from "@/components/ui/EntityLink";
@@ -47,6 +48,7 @@ import { useLookup } from "@/lib/hooks/useLookup";
 import { supportService } from "@/services";
 import { useOpenParam } from "@/lib/hooks/useOpenParam";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { SupportLookupPanel } from "./SupportLookupPanel";
 
 const Notes = styled.ul`
   margin: 0;
@@ -73,6 +75,18 @@ const Masked = styled.span`
   align-items: center;
   gap: 6px;
   font-family: var(--font-geist-mono), monospace;
+`;
+
+const CaseListHeading = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space(2)};
+  margin-bottom: ${({ theme }) => theme.space(3)};
+
+  h2 {
+    margin: 0;
+    font-size: ${({ theme }) => theme.font.h4};
+  }
 `;
 
 const PrivacyNote = styled(Alert)`
@@ -283,8 +297,8 @@ export function SupportScreen() {
     <>
       <PageHeader
         eyebrow="Member support"
-        title="Support cases"
-        subtitle="Requests from the in-app help form. Members and cases are fictional."
+        title="Support"
+        subtitle="Look up a member's account (live) and work through support cases."
       />
       <PrivacyNote
         type="info"
@@ -293,6 +307,11 @@ export function SupportScreen() {
         title="Personal data is masked"
         description="Support sees masked contact details only. Passwords, payment details and precise locations are never shown here."
       />
+      <SupportLookupPanel />
+      <CaseListHeading>
+        <h2>Support cases</h2>
+        <DemoDataTag />
+      </CaseListHeading>
       <DataTable<SupportCase>
         ariaLabel="Support cases"
         columns={columns}

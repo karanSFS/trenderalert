@@ -37,10 +37,28 @@ export interface PlatformUser {
   deletion: { requestedAt: IsoDateString; scheduledFor: IsoDateString } | null;
 }
 
-export interface UserFilters {
-  status?: UserStatus;
-  plan?: SubscriptionPlan;
-  verification?: VerificationStatus;
+/** Backend account statuses (`GET /admin/users`). */
+export type AccountStatus = "ACTIVE" | "SUSPENDED" | "BANNED" | "PENDING_VERIFICATION";
+
+/** A member from the backend user directory (`GET /admin/users`). */
+export interface DirectoryUser {
+  id: EntityId;
+  email: string | null;
+  phone: string | null;
+  username: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  /** Usually an `AccountStatus`; unknown values are shown as-is. */
+  accountStatus: string;
+  isMinor: boolean;
+  ageVerifyStatus: string;
+  trenderScore: number;
+  /** Backend admin role name, when the member is also an administrator. */
+  adminRole: string | null;
+  createdAt: IsoDateString;
 }
 
-export type UserEnforcementAction = "restrict" | "suspend" | "reinstate";
+export interface DirectoryUserFilters {
+  status?: AccountStatus;
+  minor?: "yes" | "no";
+}

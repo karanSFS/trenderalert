@@ -60,10 +60,14 @@ interface EntityLinkProps {
 }
 
 /** Link to a related record, or plain text when the current role cannot open it. */
+/** Members in demo-data modules (e.g. `usr-1042`) are fictional and have no backend record. */
+const isDemoMember = (kind: EntityKind, id: EntityId) => kind === "user" && /^usr-\d+$/.test(id);
+
 export function EntityLink({ kind, id, children }: EntityLinkProps) {
   const target = TARGETS[kind];
   const allowed = usePermission(target.permission);
   const label = children ?? id;
+  if (isDemoMember(kind, id)) return <span title="Fictional demo member">{label}</span>;
   if (!allowed) return <span>{label}</span>;
   return (
     <StyledLink href={target.href(id)} onClick={(event) => event.stopPropagation()}>

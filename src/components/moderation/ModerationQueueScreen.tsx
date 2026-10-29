@@ -1,123 +1,141 @@
 "use client";
 
-import { EyeOutlined, UserAddOutlined, UserDeleteOutlined } from "@ant-design/icons";
-import { Segmented, type TableColumnsType } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
+import { Button, type TableColumnsType } from "antd";
 import { useRouter } from "next/navigation";
+import styled from "styled-components";
 import { DataTable } from "@/components/ui/DataTable";
+import { EntityLink } from "@/components/ui/EntityLink";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { Identity } from "@/components/ui/Identity";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RowActions } from "@/components/ui/RowActions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { useConfirm } from "@/components/ui/useConfirm";
 import { moderationSelectors } from "@/features/moduleSelectors";
-import { fetchCases, moderationActions } from "@/features/moderation/moderationSlice";
+import { fetchReports, moderationActions } from "@/features/moderation/moderationSlice";
 import {
-  MODERATION_CATEGORIES,
-  type ModerationCase,
+  isSlaBreached,
   type ModerationFilters,
+  type ModerationReport,
 } from "@/features/moderation/moderationTypes";
-import { CASE_STATUS, PRIORITY, toOptions } from "@/lib/constants/statusLabels";
-import { formatDateTime } from "@/lib/formatters/date";
+import {
+  categoryLabel,
+  priorityBadge,
+  PRIORITY_OPTIONS,
+  REPORT_CATEGORY_LABELS,
+  REPORT_STATUS,
+} from "@/lib/constants/moderationLabels";
+import { toOptions } from "@/lib/constants/statusLabels";
+import { formatDateTime, formatFromNow } from "@/lib/formatters/date";
+import { shortId } from "@/lib/formatters/text";
 import { useDirectoryList } from "@/lib/hooks/useDirectoryList";
-import { useAppDispatch } from "@/store/hooks";
-import { isCaseOpen, useCaseActions } from "./useCaseActions";
+
+const Deadline = styled.span<{ $breached: boolean }>`
+  font-weight: ${({ $breached }) => ($breached ? 700 : 400)};
+  color: ${({ $breached, theme }) => ($breached ? theme.colors.error : theme.colors.textSecondary)};
+`;
+
+export function ReportTarget({ report }: { report: ModerationReport }) {
+  if (report.targetTrendId)
+    return (
+      <Identity>
+        <strong>
+          <EntityLink kind="trend" id={report.targetTrendId} />
+        </strong>
+        <span>Trend</span>
+      </Identity>
+    );
+  if (report.targetUserId)
+    return (
+      <Identity>
+        <strong title={report.targetUserId}>
+          <EntityLink kind="user" id={report.targetUserId}>
+            {shortId(report.targetUserId)}
+          </EntityLink>
+        </strong>
+        <span>Account</span>
+      </Identity>
+    );
+  return <span>Not linked</span>;
+}
+
+export function SlaDeadline({ report }: { report: ModerationReport }) {
+  const breached = isSlaBreached(report);
+  return (
+    <Identity>
+      <strong>{formatDateTime(report.slaDueAt)}</strong>
+      <Deadline $breached={breached}>
+        {report.resolvedAt
+          ? `Resolved ${formatDateTime(report.resolvedAt)}`
+          : breached
+            ? `Overdue by ${formatFromNow(report.slaDueAt).replace(" ago", "")}`
+            : `Due ${formatFromNow(report.slaDueAt)}`}
+      </Deadline>
+    </Identity>
+  );
+}
 
 export function ModerationQueueScreen() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
-  const { list, table, search, filterBar, refetch } = useDirectoryList(
+  const { table, filterBar, refetch } = useDirectoryList(
     moderationSelectors,
-    fetchCases,
+    fetchReports,
     moderationActions,
   );
-  const { confirm, dialog } = useConfirm();
-  const { assignToMe, unassign, currentAdminId, reviewers } = useCaseActions(confirm, refetch);
-  const openOnly = list.query.filters.openOnly !== false;
+  const openReport = (report: ModerationReport) => router.push(`/admin/moderation/${report.id}`);
 
-  const assigneeOptions = [
-    { value: "unassigned", label: "Unassigned" },
-    ...reviewers.map((reviewer) => ({
-      value: reviewer.id,
-      label: reviewer.id === currentAdminId ? `Assigned to me (${reviewer.name})` : reviewer.name,
-    })),
-  ];
-
-  const columns: TableColumnsType<ModerationCase> = [
+  const columns: TableColumnsType<ModerationReport> = [
     {
-      key: "id",
-      title: "Case",
-      render: (_, item) => (
+      key: "report",
+      title: "Report",
+      render: (_, report) => (
         <Identity>
-          <strong>{item.id}</strong>
-          <span>{item.reportedItemLabel}</span>
+          <strong>{categoryLabel(report.category)}</strong>
+          <span title={report.id}>{shortId(report.id)}</span>
         </Identity>
       ),
     },
-    { key: "category", title: "Category", render: (_, item) => item.category },
     {
       key: "priority",
       title: "Priority",
-      sorter: true,
-      render: (_, item) => <StatusBadge {...PRIORITY[item.priority]} />,
+      render: (_, report) => <StatusBadge {...priorityBadge(report.priority)} />,
     },
     {
       key: "status",
       title: "Status",
-      render: (_, item) => <StatusBadge {...CASE_STATUS[item.status]} />,
+      render: (_, report) => <StatusBadge {...REPORT_STATUS[report.status]} />,
     },
     {
-      key: "reviewer",
-      title: "Reviewer",
-      render: (_, item) => item.assignedReviewerName ?? <span>Unassigned</span>,
+      key: "target",
+      title: "Reported item",
+      render: (_, report) => <ReportTarget report={report} />,
+    },
+    { key: "sla", title: "SLA due", render: (_, report) => <SlaDeadline report={report} /> },
+    {
+      key: "assigned",
+      title: "Assigned to",
+      render: (_, report) =>
+        report.assignedAdminId ? (
+          <span title={report.assignedAdminEmail ?? report.assignedAdminId}>
+            {report.assignedAdminName ?? shortId(report.assignedAdminId)}
+          </span>
+        ) : (
+          "Unassigned"
+        ),
     },
     {
-      key: "reporters",
-      title: "Reporters",
-      align: "right",
-      render: (_, item) => item.reporterCount,
-    },
-    {
-      key: "submittedAt",
-      title: "Submitted",
-      sorter: true,
-      render: (_, item) => formatDateTime(item.submittedAt),
+      key: "createdAt",
+      title: "Reported",
+      render: (_, report) => formatDateTime(report.createdAt),
     },
     {
       key: "actions",
       title: <span className="ta-visually-hidden">Actions</span>,
       width: 56,
-      render: (_, item) => (
+      render: (_, report) => (
         <RowActions
-          ariaLabel={`Actions for ${item.id}`}
-          items={[
-            {
-              key: "open",
-              label: "Open case",
-              icon: <EyeOutlined />,
-              onSelect: () => router.push(`/admin/moderation/${item.id}`),
-            },
-            {
-              key: "assign",
-              label: "Assign to me",
-              icon: <UserAddOutlined />,
-              permission: "moderation:act",
-              disabled: !isCaseOpen(item) || item.assignedReviewerId === currentAdminId,
-              disabledReason: !isCaseOpen(item)
-                ? "This case is closed."
-                : "Already assigned to you.",
-              onSelect: () => assignToMe(item),
-            },
-            {
-              key: "unassign",
-              label: "Unassign",
-              icon: <UserDeleteOutlined />,
-              permission: "moderation:act",
-              disabled: !isCaseOpen(item) || !item.assignedReviewerId,
-              disabledReason: !isCaseOpen(item) ? "This case is closed." : "Not assigned.",
-              onSelect: () => unassign(item),
-            },
-          ]}
+          ariaLabel={`Actions for report ${report.id}`}
+          items={[{ key: "open", label: "Open report", onSelect: () => openReport(report) }]}
         />
       ),
     },
@@ -128,61 +146,42 @@ export function ModerationQueueScreen() {
       <PageHeader
         eyebrow="Trust & Safety"
         title="Moderation queue"
-        subtitle="Reports from members, ordered by priority. Open a case to review it and record a decision. All cases are fictional."
+        subtitle="Live reports from the TrenderAlert backend, in the backend's priority order. Open a report to take action."
+        actions={
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => refetch()}
+            loading={table.status === "loading"}
+          >
+            Refresh
+          </Button>
+        }
       />
-      <DataTable<ModerationCase>
-        ariaLabel="Moderation queue"
+      <DataTable<ModerationReport>
+        ariaLabel="Moderation reports"
         columns={columns}
         rowKey="id"
         {...table}
-        onRowClick={(item) => router.push(`/admin/moderation/${item.id}`)}
-        emptyTitle={openOnly ? "No open cases match" : "No cases match"}
+        pagination={{ ...table.pagination, pageSizeOptions: [10, 20, 50] }}
+        onRowClick={openReport}
+        emptyTitle="No reports match"
+        emptyDescription="Try a different status, category or priority."
         toolbar={
           <FilterBar<ModerationFilters>
-            search={{
-              ...search,
-              ariaLabel: "Search cases",
-              placeholder: "Search case id, item or reviewer",
-            }}
             filters={[
-              { type: "select", key: "priority", label: "Priority", options: toOptions(PRIORITY) },
-              { type: "select", key: "status", label: "Status", options: toOptions(CASE_STATUS) },
+              { type: "select", key: "status", label: "Status", options: toOptions(REPORT_STATUS) },
               {
                 type: "select",
                 key: "category",
                 label: "Category",
-                width: 210,
-                options: MODERATION_CATEGORIES.map((category) => ({
-                  value: category,
-                  label: category,
-                })),
+                options: toOptions(REPORT_CATEGORY_LABELS),
               },
-              {
-                type: "select",
-                key: "assignee",
-                label: "Assignee",
-                width: 220,
-                options: assigneeOptions,
-              },
+              { type: "select", key: "priority", label: "Priority", options: PRIORITY_OPTIONS },
             ]}
             {...filterBar}
-            extra={
-              <Segmented<"open" | "all">
-                aria-label="Queue scope"
-                value={openOnly ? "open" : "all"}
-                onChange={(value) =>
-                  dispatch(moderationActions.setFilters({ openOnly: value === "open" }))
-                }
-                options={[
-                  { label: "Open cases", value: "open" },
-                  { label: "All cases", value: "all" },
-                ]}
-              />
-            }
           />
         }
       />
-      {dialog}
     </>
   );
 }

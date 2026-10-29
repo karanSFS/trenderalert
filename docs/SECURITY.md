@@ -13,6 +13,10 @@ This frontend is a demonstration running on fictional local data. It has **no** 
 - Subscription and transaction screens show opaque store references, never payment credentials.
 - Administrator records show MFA status only; there are no MFA secrets.
 
+## Backend proxy
+
+All backend calls go through `/api/backend/*`, which forwards only allow-listed paths (see BACKEND_INTEGRATION.md) and attaches the token server-side. Tokens never reach browser JavaScript. Member contact details from `GET /admin/users` are masked in the UI for every role except Super Administrator; the backend should also mask them for Support Agents.
+
 ## Authentication limitations
 
 - Sign-in uses the backend, but every admin module still runs on local mock data, so module role checks only hide navigation and actions. They do not protect data.

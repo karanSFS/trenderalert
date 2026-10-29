@@ -1,17 +1,9 @@
 import type {
   AlertSeverity,
-  CasePriority,
   FinancialException,
   HealthStatus,
 } from "@/features/dashboard/dashboardTypes";
 import type { StatusTone } from "@/types/common";
-
-export const PRIORITY_BADGE: Record<CasePriority, { tone: StatusTone; label: string }> = {
-  critical: { tone: "error", label: "Critical" },
-  high: { tone: "warning", label: "High" },
-  medium: { tone: "info", label: "Medium" },
-  low: { tone: "neutral", label: "Low" },
-};
 
 export const HEALTH_BADGE: Record<HealthStatus, { tone: StatusTone; label: string }> = {
   operational: { tone: "success", label: "Operational" },

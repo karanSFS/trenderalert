@@ -1,9 +1,10 @@
 "use client";
 
-import { CheckCircleFilled, CloseCircleFilled, LockOutlined } from "@ant-design/icons";
-import { Alert, Form, Input, InputNumber, Switch, Table } from "antd";
+import { LockOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Alert, Button, Form, Input, Select, Switch, Table, Tag } from "antd";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
+import { Can } from "@/components/auth/Can";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { FormModal } from "@/components/ui/FormModal";
 import { Identity } from "@/components/ui/Identity";
@@ -12,60 +13,101 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { RowActions } from "@/components/ui/RowActions";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { fetchConfiguration, updateFeatureFlag } from "@/features/configuration/configurationSlice";
-import type { FeatureFlag } from "@/features/configuration/configurationTypes";
-import { selectConfiguration } from "@/features/moduleSelectors";
+import { selectFeatureFlags, selectPlatformMetrics } from "@/features/moduleSelectors";
+import {
+  fetchFeatureFlags,
+  fetchPlatformMetrics,
+  saveFeatureFlag,
+} from "@/features/platform/platformSlices";
+import { ACTIVATION_GATED_FLAGS, type FeatureFlag } from "@/features/platform/platformTypes";
 import { formatDateTime } from "@/lib/formatters/date";
-import { useDemoAction } from "@/lib/hooks/useDemoAction";
+import { humanizeCode } from "@/lib/formatters/text";
+import { useAdminLabel } from "@/lib/hooks/useAdminLabel";
+import { useApiAction } from "@/lib/hooks/useApiAction";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const Banner = styled(Alert)`
   margin-bottom: ${({ theme }) => theme.space(4)};
 `;
 
-const Gates = styled.ul`
-  margin: 0;
-  padding: 0;
-  list-style: none;
+const Payload = styled.dl`
   display: grid;
-  gap: 4px;
+  grid-template-columns: auto auto;
+  gap: 2px ${({ theme }) => theme.space(3)};
+  margin: 0;
+  font-size: ${({ theme }) => theme.font.sizeSm};
 
-  li {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: ${({ theme }) => theme.font.sizeSm};
+  dt {
+    color: ${({ theme }) => theme.colors.textSecondary};
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
   }
 `;
 
-const GateIcon = styled.span<{ $ok: boolean }>`
-  color: ${({ $ok, theme }) => ($ok ? theme.colors.success : theme.colors.error)};
+const PayloadRow = styled.div`
+  display: contents;
 `;
 
+const Badges = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+`;
+
+const KEY_PATTERN = /^[A-Z][A-Z0-9_]{2,63}$/;
+
 interface FlagValues {
+  key: string;
   enabled: boolean;
-  rollout: number;
-  reason: string;
+  regions: string[];
+  payload: string;
+  justification: string;
 }
 
-const missingGates = (flag: FeatureFlag) => flag.gates.filter((gate) => !gate.satisfied);
+const isGated = (key: string) => ACTIVATION_GATED_FLAGS.includes(key);
 
-function editBlock(flag: FeatureFlag): string | null {
-  const missing = missingGates(flag);
-  if (flag.activationGated && missing.length > 0)
-    return `Activation is blocked until these gates are recorded: ${missing.map((gate) => gate.label).join(", ")}.`;
-  return null;
+function parsePayload(text: string): Record<string, unknown> {
+  const value = JSON.parse(text || "{}") as unknown;
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("not an object");
+  return value as Record<string, unknown>;
+}
+
+function PayloadSummary({ payload }: { payload: Record<string, unknown> }) {
+  const entries = Object.entries(payload);
+  if (entries.length === 0) return <span>—</span>;
+  return (
+    <Payload>
+      {entries.map(([key, value]) => (
+        <PayloadRow key={key}>
+          <dt>{humanizeCode(key)}</dt>
+          <dd>{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd>
+        </PayloadRow>
+      ))}
+    </Payload>
+  );
 }
 
 export function FeatureFlagsScreen() {
   const dispatch = useAppDispatch();
-  const { data, status, error } = useAppSelector(selectConfiguration);
-  const { run } = useDemoAction();
-  const [editing, setEditing] = useState<FeatureFlag | null>(null);
-  const [enabled, setEnabled] = useState(false);
+  const { data, status, error } = useAppSelector(selectFeatureFlags);
+  const metrics = useAppSelector(selectPlatformMetrics);
+  const adminLabel = useAdminLabel();
+  const { run } = useApiAction();
+  const [editing, setEditing] = useState<FeatureFlag | "new" | null>(null);
+  const current = editing && editing !== "new" ? editing : null;
+  const killSwitches = metrics.data?.activeKillSwitches ?? [];
+
+  const reload = () => {
+    dispatch(fetchFeatureFlags());
+    dispatch(fetchPlatformMetrics());
+  };
 
   useEffect(() => {
-    dispatch(fetchConfiguration());
+    dispatch(fetchFeatureFlags());
+    dispatch(fetchPlatformMetrics());
   }, [dispatch]);
 
   if (!data) {
@@ -74,47 +116,57 @@ export function FeatureFlagsScreen() {
         <ErrorState
           title="Feature flags could not be loaded"
           message={error?.message}
-          onRetry={() => dispatch(fetchConfiguration())}
+          onRetry={reload}
         />
       );
     return <PageSkeleton />;
   }
 
-  const open = (flag: FeatureFlag) => {
-    setEnabled(flag.enabled);
-    setEditing(flag);
-  };
-  const editingMissing = editing ? missingGates(editing) : [];
+  const open = (flag: FeatureFlag | "new") => setEditing(flag);
+  const gatedOff = Boolean(current && isGated(current.key) && !current.enabled);
 
   return (
     <>
       <PageHeader
         eyebrow="Configuration"
         title="Feature flags"
-        subtitle="Owner-controlled flags. Gates are recorded by the responsible teams in the backend and are read-only here."
+        subtitle="Runtime flags, kill switches and algorithm settings from the TrenderAlert backend. Every change needs a justification and is written to the audit log."
+        actions={
+          <>
+            <Button icon={<ReloadOutlined />} onClick={reload} loading={status === "loading"}>
+              Refresh
+            </Button>
+            <Can permission="configuration:manage">
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => open("new")}>
+                New flag
+              </Button>
+            </Can>
+          </>
+        }
       />
       <Banner
         type="warning"
         showIcon
         icon={<LockOutlined />}
         title="Paid contests stay off"
-        description="The paid contests flag cannot be enabled until legal, payment-provider, store-policy, fraud-control, official-rules and operations gates are all recorded."
+        description="ENABLE_PAID_CONTESTS cannot be switched on from the portal until legal, payment-provider and operations approvals exist."
       />
-      <SectionCard title="Flags">
+      <SectionCard title={`Flags (${data.length})`}>
         <Table<FeatureFlag>
           size="small"
           rowKey="key"
           pagination={false}
-          dataSource={data.flags}
-          scroll={{ x: 860 }}
+          dataSource={data}
+          scroll={{ x: 900 }}
+          locale={{ emptyText: "No feature flags are defined." }}
           columns={[
             {
-              key: "name",
+              key: "key",
               title: "Flag",
               render: (_, flag) => (
                 <Identity>
-                  <strong>{flag.name}</strong>
-                  <span>{flag.description}</span>
+                  <strong>{humanizeCode(flag.key)}</strong>
+                  <span>{flag.key}</span>
                 </Identity>
               ),
             },
@@ -122,31 +174,32 @@ export function FeatureFlagsScreen() {
               key: "state",
               title: "State",
               render: (_, flag) => (
-                <StatusBadge
-                  label={flag.enabled ? `On · ${flag.rollout}%` : "Off"}
-                  tone={flag.enabled ? "success" : "neutral"}
-                />
+                <Badges>
+                  <StatusBadge
+                    label={flag.enabled ? "On" : "Off"}
+                    tone={flag.enabled ? "success" : "neutral"}
+                  />
+                  {killSwitches.includes(flag.key) ? (
+                    <StatusBadge label="Kill switch active" tone="error" />
+                  ) : null}
+                  {isGated(flag.key) ? (
+                    <StatusBadge label="Activation-gated" tone="warning" />
+                  ) : null}
+                </Badges>
               ),
             },
-            { key: "audience", title: "Audience", dataIndex: "audience" },
             {
-              key: "gates",
-              title: "Gates",
+              key: "regions",
+              title: "Regions",
               render: (_, flag) =>
-                flag.gates.length > 0 ? (
-                  <Gates>
-                    {flag.gates.map((gate) => (
-                      <li key={gate.id}>
-                        <GateIcon $ok={gate.satisfied} aria-hidden="true">
-                          {gate.satisfied ? <CheckCircleFilled /> : <CloseCircleFilled />}
-                        </GateIcon>
-                        {gate.label}: {gate.satisfied ? "recorded" : "outstanding"}
-                      </li>
-                    ))}
-                  </Gates>
-                ) : (
-                  "—"
-                ),
+                flag.regions.length
+                  ? flag.regions.map((region) => <Tag key={region}>{region}</Tag>)
+                  : "All",
+            },
+            {
+              key: "payload",
+              title: "Settings",
+              render: (_, flag) => <PayloadSummary payload={flag.payload} />,
             },
             {
               key: "updated",
@@ -154,7 +207,7 @@ export function FeatureFlagsScreen() {
               render: (_, flag) => (
                 <Identity>
                   <strong>{formatDateTime(flag.updatedAt)}</strong>
-                  <span>{flag.updatedBy}</span>
+                  <span>{adminLabel(flag.updatedBy)}</span>
                 </Identity>
               ),
             },
@@ -162,24 +215,19 @@ export function FeatureFlagsScreen() {
               key: "actions",
               title: <span className="ta-visually-hidden">Actions</span>,
               width: 56,
-              render: (_, flag) => {
-                const blocked = editBlock(flag);
-                return (
-                  <RowActions
-                    ariaLabel={`Actions for ${flag.name}`}
-                    items={[
-                      {
-                        key: "edit",
-                        label: "Change state or rollout",
-                        permission: "configuration:manage",
-                        disabled: blocked !== null,
-                        disabledReason: blocked ?? undefined,
-                        onSelect: () => open(flag),
-                      },
-                    ]}
-                  />
-                );
-              },
+              render: (_, flag) => (
+                <RowActions
+                  ariaLabel={`Actions for ${flag.key}`}
+                  items={[
+                    {
+                      key: "edit",
+                      label: "Edit flag",
+                      permission: "configuration:manage",
+                      onSelect: () => open(flag),
+                    },
+                  ]}
+                />
+              ),
             },
           ]}
         />
@@ -187,67 +235,114 @@ export function FeatureFlagsScreen() {
 
       <FormModal<FlagValues>
         open={editing !== null}
-        title={editing ? `Change "${editing.name}"` : "Change flag"}
-        description={editing ? `${editing.description} Audience: ${editing.audience}.` : undefined}
+        width={620}
+        title={current ? `Edit ${current.key}` : "New feature flag"}
+        description="The backend applies the change immediately. Use the justification to explain why."
         submitLabel="Save flag"
-        initialValues={editing ? { enabled: editing.enabled, rollout: editing.rollout } : undefined}
+        initialValues={
+          current
+            ? {
+                key: current.key,
+                enabled: current.enabled,
+                regions: current.regions,
+                payload: JSON.stringify(current.payload, null, 2),
+              }
+            : { enabled: false, regions: [], payload: "{}" }
+        }
         onClose={() => setEditing(null)}
         onSubmit={async (values) => {
-          if (!editing) return;
-          const rollout = values.enabled ? values.rollout : 0;
+          const key = values.key.trim();
           await run(
             dispatch(
-              updateFeatureFlag({
-                key: editing.key,
+              saveFeatureFlag({
+                key,
                 enabled: values.enabled,
-                rollout,
-                reason: values.reason,
+                regions: values.regions,
+                payload: parsePayload(values.payload),
+                justification: values.justification.trim(),
               }),
             ).unwrap(),
             {
-              success: `${editing.name}: ${values.enabled ? `on at ${rollout}%` : "off"}`,
-              audit: () => ({
-                action: "featureFlag.update",
-                targetType: "featureFlag",
-                targetId: editing.key,
-                summary: `Set "${editing.name}" ${values.enabled ? `on at ${rollout}%` : "off"}`,
-                reason: values.reason,
-              }),
+              success: `${key} saved`,
+              after: () => dispatch(fetchPlatformMetrics()),
             },
           );
         }}
       >
-        {editingMissing.length > 0 ? (
-          <Banner
-            type="warning"
-            showIcon
-            title="Rollout cannot increase"
-            description={`Outstanding gates: ${editingMissing.map((gate) => gate.label).join(", ")}. You can reduce or turn off this flag.`}
-          />
-        ) : null}
-        <Form.Item name="enabled" label="Enabled" valuePropName="checked">
-          <Switch onChange={setEnabled} />
-        </Form.Item>
         <Form.Item
-          name="rollout"
-          label="Rollout percentage"
+          name="key"
+          label="Key"
           rules={[
+            { required: true, message: "Enter a key." },
             {
-              required: true,
-              type: "integer",
-              min: 0,
-              max: 100,
-              message: "Enter a whole number from 0 to 100.",
+              pattern: KEY_PATTERN,
+              message: "Use capital letters, digits and underscores, e.g. ENABLE_NEW_FEATURE.",
+            },
+            {
+              validator: (_, value?: string) =>
+                current || !data.some((flag) => flag.key === value?.trim())
+                  ? Promise.resolve()
+                  : Promise.reject(new Error("A flag with this key already exists.")),
             },
           ]}
         >
-          <InputNumber min={0} max={100} precision={0} suffix="%" disabled={!enabled} />
+          <Input disabled={Boolean(current)} placeholder="ENABLE_NEW_FEATURE" />
         </Form.Item>
         <Form.Item
-          name="reason"
-          label="Reason"
+          name="enabled"
+          label="Enabled"
+          valuePropName="checked"
+          extra={
+            current && isGated(current.key)
+              ? "Activation-gated: this flag cannot be switched on until approvals exist."
+              : undefined
+          }
           rules={[
-            { required: true, whitespace: true, min: 10, message: "Enter at least 10 characters." },
+            {
+              validator: (_, value: boolean) =>
+                value && current && isGated(current.key) && !current.enabled
+                  ? Promise.reject(
+                      new Error("This flag is activation-gated and cannot be enabled."),
+                    )
+                  : Promise.resolve(),
+            },
+          ]}
+        >
+          <Switch disabled={gatedOff} />
+        </Form.Item>
+        <Form.Item
+          name="regions"
+          label="Allowed regions"
+          extra="Type a region code and press Enter, e.g. US or GLOBAL."
+        >
+          <Select mode="tags" tokenSeparators={[",", " "]} placeholder="All regions" />
+        </Form.Item>
+        <Form.Item
+          name="payload"
+          label="Settings (JSON object)"
+          rules={[
+            {
+              validator: (_, value?: string) => {
+                try {
+                  parsePayload(value ?? "{}");
+                  return Promise.resolve();
+                } catch {
+                  return Promise.reject(
+                    new Error('Enter a valid JSON object, e.g. {"min_age": 18}.'),
+                  );
+                }
+              },
+            },
+          ]}
+        >
+          <Input.TextArea autoSize={{ minRows: 4, maxRows: 12 }} spellCheck={false} />
+        </Form.Item>
+        <Form.Item
+          name="justification"
+          label="Justification"
+          rules={[
+            { required: true, whitespace: true, message: "A justification is required." },
+            { min: 10, message: "Enter at least 10 characters." },
           ]}
         >
           <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} maxLength={500} showCount />

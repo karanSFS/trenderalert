@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Button, InputNumber, Select, Switch, Table, Tabs } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { PageSkeleton } from "@/components/ui/LoadingSkeleton";
@@ -15,41 +15,18 @@ import type {
   FeaturedLocation,
   Market,
   MarketStatus,
-  RankingFactor,
   RelevanceRadius,
 } from "@/features/discovery/discoveryTypes";
 import { selectDiscovery } from "@/features/moduleSelectors";
 import type { DiscoveryUpdate } from "@/services/contracts/operationalServices";
 import { MARKET_STATUS } from "@/lib/constants/operationalLabels";
 import { toOptions } from "@/lib/constants/statusLabels";
-import { formatDateTime } from "@/lib/formatters/date";
 import { useDemoAction } from "@/lib/hooks/useDemoAction";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { RankingWeightsTab } from "./RankingWeightsTab";
 
 const Banner = styled(Alert)`
   margin-bottom: ${({ theme }) => theme.space(4)};
-`;
-
-const Factors = styled.div`
-  display: grid;
-  gap: ${({ theme }) => theme.space(3)};
-  max-width: 520px;
-`;
-
-const FactorRow = styled.label`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: ${({ theme }) => theme.space(3)};
-`;
-
-const Total = styled.div<{ $valid: boolean }>`
-  display: flex;
-  justify-content: space-between;
-  padding-top: ${({ theme }) => theme.space(3)};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
-  font-weight: 650;
-  color: ${({ $valid, theme }) => ($valid ? theme.colors.textPrimary : theme.colors.error)};
 `;
 
 const FormActions = styled.div`
@@ -78,7 +55,6 @@ const SOURCE_SUMMARY: Record<DiscoveryUpdate["type"], string> = {
   location: "featured location",
   source: "discovery source",
   relevance: "relevance radius",
-  ranking: "ranking proposal",
 };
 
 export function DiscoveryScreen() {
@@ -97,8 +73,7 @@ export function DiscoveryScreen() {
       audit: () => ({
         action: `discovery.${update.type}`,
         targetType: "discovery",
-        targetId:
-          "id" in update ? update.id : update.type === "relevance" ? update.scope : "ranking",
+        targetId: "id" in update ? update.id : update.scope,
         summary: `Updated ${SOURCE_SUMMARY[update.type]}: ${summary}`,
       }),
     });
@@ -155,7 +130,7 @@ export function DiscoveryScreen() {
           {
             key: "ranking",
             label: "Ranking",
-            children: <RankingTab config={data} canManage={canManage} save={save} />,
+            children: <RankingWeightsTab canManage={canManage} />,
           },
         ]}
       />
@@ -395,139 +370,5 @@ function FreshnessTab({ config, canManage, save }: TabProps) {
         />
       </SectionCard>
     </TabStack>
-  );
-}
-
-function RankingTab({ config, canManage, save }: TabProps) {
-  const { ranking } = config;
-  const [factors, setFactors] = useState<RankingFactor[]>(ranking.factors);
-  const [rising, setRising] = useState(ranking.risingThreshold);
-  const [hot, setHot] = useState(ranking.hotThreshold);
-  const [saving, setSaving] = useState(false);
-
-  const reset = () => {
-    setFactors(ranking.factors);
-    setRising(ranking.risingThreshold);
-    setHot(ranking.hotThreshold);
-  };
-  // A saved proposal replaces `ranking`; start editing from the new values.
-  const [seenRanking, setSeenRanking] = useState(ranking);
-  if (seenRanking !== ranking) {
-    setSeenRanking(ranking);
-    reset();
-  }
-
-  const total = useMemo(
-    () => factors.reduce((sum, factor) => sum + (factor.weight || 0), 0),
-    [factors],
-  );
-  const thresholdsValid = rising > 0 && rising < hot && hot <= 100;
-  const valid = total === 100 && thresholdsValid;
-  const dirty =
-    rising !== ranking.risingThreshold ||
-    hot !== ranking.hotThreshold ||
-    factors.some((factor, index) => factor.weight !== ranking.factors[index]?.weight);
-
-  return (
-    <SectionCard title={`Ranking weights · ${ranking.version}`}>
-      <Banner
-        type="warning"
-        showIcon
-        title="Proposal only"
-        description="TrendScore weighting is an owner decision. These values are a proposal for discussion and are not connected to a ranking service."
-      />
-      <Factors>
-        {factors.map((factor, index) => (
-          <FactorRow key={factor.id}>
-            <span>{factor.label}</span>
-            <InputNumber
-              aria-label={`${factor.label} weight`}
-              min={0}
-              max={100}
-              precision={0}
-              suffix="%"
-              disabled={!canManage}
-              value={factor.weight}
-              onChange={(next) =>
-                setFactors((current) =>
-                  current.map((item, itemIndex) =>
-                    itemIndex === index ? { ...item, weight: next ?? 0 } : item,
-                  ),
-                )
-              }
-            />
-          </FactorRow>
-        ))}
-        <Total $valid={total === 100} aria-live="polite">
-          <span>Total</span>
-          <span>{total}%</span>
-        </Total>
-        <FactorRow>
-          <span>Rising threshold (TrendScore)</span>
-          <InputNumber
-            aria-label="Rising threshold"
-            min={1}
-            max={99}
-            precision={0}
-            disabled={!canManage}
-            value={rising}
-            onChange={(next) => setRising(next ?? 0)}
-          />
-        </FactorRow>
-        <FactorRow>
-          <span>Hot threshold (TrendScore)</span>
-          <InputNumber
-            aria-label="Hot threshold"
-            min={2}
-            max={100}
-            precision={0}
-            disabled={!canManage}
-            value={hot}
-            onChange={(next) => setHot(next ?? 0)}
-          />
-        </FactorRow>
-      </Factors>
-      {total !== 100 ? (
-        <Banner
-          type="error"
-          showIcon
-          title={`Weights must add up to 100% (currently ${total}%).`}
-        />
-      ) : null}
-      {!thresholdsValid ? (
-        <Banner
-          type="error"
-          showIcon
-          title="The Rising threshold must be above 0 and below the Hot threshold."
-        />
-      ) : null}
-      <FormActions>
-        {canManage ? (
-          <>
-            <Button
-              type="primary"
-              loading={saving}
-              disabled={!valid || !dirty}
-              onClick={async () => {
-                setSaving(true);
-                await save(
-                  { type: "ranking", factors, risingThreshold: rising, hotThreshold: hot },
-                  "ranking weights saved as a new proposal",
-                );
-                setSaving(false);
-              }}
-            >
-              Save proposal
-            </Button>
-            <Button disabled={!dirty || saving} onClick={reset}>
-              Discard changes
-            </Button>
-          </>
-        ) : null}
-        <small>
-          Last updated {formatDateTime(ranking.updatedAt)} by {ranking.updatedBy}
-        </small>
-      </FormActions>
-    </SectionCard>
   );
 }

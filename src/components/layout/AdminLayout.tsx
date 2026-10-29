@@ -7,11 +7,13 @@ import styled from "styled-components";
 import { DemoModeBanner } from "@/components/ui/DemoModeBanner";
 import { AccessDeniedState } from "@/components/ui/ErrorState";
 import { selectAuth } from "@/features/auth/authSelectors";
+import { sessionEnded } from "@/features/auth/authSlice";
 import { selectSidebarCollapsed } from "@/features/settings/layoutSlice";
 import { ADMIN_HOME_PATH, ADMIN_LOGIN_PATH } from "@/lib/constants/app";
 import { matchAdminRoute } from "@/lib/constants/adminRoutes";
 import { roleHasPermission } from "@/lib/constants/roles";
-import { useAppSelector } from "@/store/hooks";
+import { SESSION_ENDED_EVENT } from "@/services/api/http";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { AdminHeader } from "./AdminHeader";
 import { AdminShellSkeleton } from "./AdminShellSkeleton";
 import { AdminSidebar } from "./AdminSidebar";
@@ -84,11 +86,18 @@ function RouteAccessGuard({ children }: { children: ReactNode }) {
 }
 
 export function AdminLayout({ children }: { children: ReactNode }) {
+  const dispatch = useAppDispatch();
   const router = useRouter();
   const pathname = usePathname();
   const { currentAdmin, sessionRestored } = useAppSelector(selectAuth);
   const collapsed = useAppSelector(selectSidebarCollapsed);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    const handleEnded = () => dispatch(sessionEnded());
+    window.addEventListener(SESSION_ENDED_EVENT, handleEnded);
+    return () => window.removeEventListener(SESSION_ENDED_EVENT, handleEnded);
+  }, [dispatch]);
 
   useEffect(() => {
     if (sessionRestored && !currentAdmin) {

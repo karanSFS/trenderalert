@@ -3,23 +3,16 @@
 import Link from "next/link";
 import { DemoDataTag } from "@/components/ui/DemoDataTag";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import type {
-  ActivityItem,
-  DashboardAlert,
-  FinancialException,
-  PendingCase,
-  ServiceHealth,
-} from "@/features/dashboard/dashboardTypes";
-import { ROLE_LABELS } from "@/lib/constants/roles";
-import { formatDateTime } from "@/lib/formatters/date";
+import type { DashboardAlert, FinancialException } from "@/features/dashboard/dashboardTypes";
+import { isSlaBreached, type ModerationReport } from "@/features/moderation/moderationTypes";
+import type { PlatformHealth, PlatformMetrics } from "@/features/platform/platformTypes";
+import type { AuditLogEntry } from "@/features/security/securityTypes";
+import { categoryLabel, priorityBadge, REPORT_STATUS } from "@/lib/constants/moderationLabels";
+import { formatDateTime, formatFromNow } from "@/lib/formatters/date";
 import { formatCurrency } from "@/lib/formatters/number";
+import { humanizeCode, shortId } from "@/lib/formatters/text";
 import { Panel, PanelList, PanelRow, RowAside, RowMain } from "./Panel";
-import {
-  EXCEPTION_STATUS_BADGE,
-  HEALTH_BADGE,
-  PRIORITY_BADGE,
-  SEVERITY_BADGE,
-} from "./statusTones";
+import { EXCEPTION_STATUS_BADGE, HEALTH_BADGE, SEVERITY_BADGE } from "./statusTones";
 
 interface PanelDataProps<T> {
   items: T[];
@@ -27,76 +20,73 @@ interface PanelDataProps<T> {
   limit?: number;
 }
 
-export function RecentActivityPanel({ items, loading, limit = 6 }: PanelDataProps<ActivityItem>) {
+export function RecentActivityPanel({
+  items,
+  loading,
+  error,
+  adminLabel,
+}: PanelDataProps<AuditLogEntry> & { error?: string | null; adminLabel: (id: string) => string }) {
   return (
     <Panel
       title="Recent admin activity"
-      badge={<DemoDataTag />}
       viewAllHref="/admin/security/audit-logs"
+      viewAllLabel="Audit logs"
       loading={loading}
       isEmpty={items.length === 0}
-      emptyTitle="No recent activity"
+      emptyTitle={error ? "Activity could not be loaded" : "No recorded activity yet"}
+      emptyDescription={error ?? undefined}
     >
       <PanelList>
-        {items.slice(0, limit).map((item) => {
-          const content = (
-            <>
+        {items.map((item) => (
+          <li key={item.id}>
+            <PanelRow as={Link} href={`/admin/security/audit-logs?open=${item.id}`}>
               <RowMain>
-                <strong>{item.summary}</strong>
-                <span>
-                  {item.actorName} · {ROLE_LABELS[item.actorRole]}
-                </span>
+                <strong>{humanizeCode(item.action)}</strong>
+                <span>{item.justification}</span>
+                <span>{adminLabel(item.actorId)}</span>
               </RowMain>
               <RowAside>
-                <span>{formatDateTime(item.occurredAt)}</span>
-                {item.session ? <StatusBadge tone="brand" label="This session" /> : null}
+                <span>{formatDateTime(item.createdAt)}</span>
               </RowAside>
-            </>
-          );
-          return (
-            <li key={item.id}>
-              {item.href ? (
-                <PanelRow as={Link} href={item.href}>
-                  {content}
-                </PanelRow>
-              ) : (
-                <PanelRow>{content}</PanelRow>
-              )}
-            </li>
-          );
-        })}
+            </PanelRow>
+          </li>
+        ))}
       </PanelList>
     </Panel>
   );
 }
 
-export function PendingModerationPanel({ items, loading, limit = 5 }: PanelDataProps<PendingCase>) {
+export function OpenReportsPanel({
+  items,
+  loading,
+  error,
+  limit = 5,
+}: PanelDataProps<ModerationReport> & { error?: string | null }) {
   return (
     <Panel
-      title="Pending moderation"
-      badge={<DemoDataTag />}
+      title="Open moderation reports"
       viewAllHref="/admin/moderation"
       viewAllLabel="Open queue"
       loading={loading}
       isEmpty={items.length === 0}
-      emptyTitle="Queue is clear"
+      emptyTitle={error ? "Reports could not be loaded" : "Queue is clear"}
+      emptyDescription={error ?? undefined}
     >
       <PanelList>
         {items.slice(0, limit).map((item) => (
           <li key={item.id}>
             <PanelRow as={Link} href={`/admin/moderation/${item.id}`}>
               <RowMain>
-                <strong>{item.category}</strong>
+                <strong>{categoryLabel(item.category)}</strong>
                 <span>
-                  {item.id} · {item.reportedItem}
+                  {shortId(item.id)} · {REPORT_STATUS[item.status].label}
                 </span>
                 <span>
-                  {item.assignedReviewer ? `Assigned to ${item.assignedReviewer}` : "Unassigned"}
+                  {isSlaBreached(item) ? "SLA overdue" : `SLA due ${formatFromNow(item.slaDueAt)}`}
                 </span>
               </RowMain>
               <RowAside>
-                <StatusBadge {...PRIORITY_BADGE[item.priority]} />
-                <span>{formatDateTime(item.submittedAt)}</span>
+                <StatusBadge {...priorityBadge(item.priority)} />
               </RowAside>
             </PanelRow>
           </li>
@@ -144,29 +134,72 @@ export function FinancialExceptionsPanel({
 }
 
 export function SystemHealthPanel({
-  items,
+  health,
+  metrics,
   loading,
+  error,
   canOpenOperations,
-}: PanelDataProps<ServiceHealth> & { canOpenOperations: boolean }) {
+}: {
+  health: PlatformHealth | null;
+  metrics: PlatformMetrics | null;
+  loading: boolean;
+  error?: string | null;
+  canOpenOperations: boolean;
+}) {
+  const rows: { key: string; name: string; detail: string; healthy: boolean | null }[] = [];
+  if (health) {
+    rows.push({
+      key: "api",
+      name: health.service,
+      detail: `Version ${health.version}`,
+      healthy: health.status.toLowerCase() === "healthy",
+    });
+    if (health.redisConnected !== null)
+      rows.push({
+        key: "cache",
+        name: "Cache (Redis)",
+        detail: health.redisConnected ? "Connected" : "Not connected",
+        healthy: health.redisConnected,
+      });
+  }
+  if (metrics) {
+    rows.push({
+      key: "platform",
+      name: "Platform status",
+      detail: humanizeCode(metrics.systemHealth),
+      healthy: metrics.systemHealth.toUpperCase() === "HEALTHY",
+    });
+    rows.push({
+      key: "kill",
+      name: "Kill switches",
+      detail: metrics.activeKillSwitches.length
+        ? metrics.activeKillSwitches.map(humanizeCode).join(", ")
+        : "None active",
+      healthy: null,
+    });
+  }
   return (
     <Panel
       title="System health"
-      badge={<DemoDataTag label="Simulated status" />}
       viewAllHref={canOpenOperations ? "/admin/operations" : undefined}
       viewAllLabel="Operations"
       loading={loading}
-      isEmpty={items.length === 0}
+      isEmpty={rows.length === 0}
+      emptyTitle={error ? "Health could not be checked" : "No health data"}
+      emptyDescription={error ?? undefined}
     >
       <PanelList>
-        {items.map((item) => (
-          <li key={item.key}>
+        {rows.map((row) => (
+          <li key={row.key}>
             <PanelRow>
               <RowMain>
-                <strong>{item.name}</strong>
-                <span>{item.detail}</span>
+                <strong>{row.name}</strong>
+                <span>{row.detail}</span>
               </RowMain>
               <RowAside>
-                <StatusBadge {...HEALTH_BADGE[item.status]} />
+                {row.healthy === null ? null : (
+                  <StatusBadge {...HEALTH_BADGE[row.healthy ? "operational" : "degraded"]} />
+                )}
               </RowAside>
             </PanelRow>
           </li>

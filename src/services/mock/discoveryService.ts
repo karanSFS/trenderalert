@@ -7,7 +7,7 @@ const SERVICE = "discovery";
 export const mockDiscoveryService: DiscoveryService = {
   get: () => mockRequest(() => db.discovery, { service: SERVICE }),
 
-  update: (update, actor) =>
+  update: (update) =>
     mockRequest(
       () => {
         const config = db.discovery;
@@ -40,36 +40,6 @@ export const mockDiscoveryService: DiscoveryService = {
               "Radius must be a whole number between 1 and 500 km.",
             );
             radius!.radiusKm = update.radiusKm;
-            break;
-          }
-          case "ranking": {
-            const total = update.factors.reduce((sum, factor) => sum + factor.weight, 0);
-            assertValid(
-              update.factors.every(
-                (factor) =>
-                  Number.isInteger(factor.weight) && factor.weight >= 0 && factor.weight <= 100,
-              ),
-              "Each weight must be a whole number from 0 to 100.",
-            );
-            assertValid(
-              total === 100,
-              `Ranking weights must add up to 100% (currently ${total}%).`,
-            );
-            assertValid(
-              update.risingThreshold > 0 &&
-                update.risingThreshold < update.hotThreshold &&
-                update.hotThreshold <= 100,
-              "The Rising threshold must be above 0 and below the Hot threshold (max 100).",
-            );
-            const [, revision] = config.ranking.version.split("-");
-            config.ranking = {
-              version: `proposal-${Number(revision ?? 0) + 1}`,
-              factors: update.factors,
-              risingThreshold: update.risingThreshold,
-              hotThreshold: update.hotThreshold,
-              updatedAt: new Date().toISOString(),
-              updatedBy: actor.name,
-            };
             break;
           }
         }

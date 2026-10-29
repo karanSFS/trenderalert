@@ -40,41 +40,8 @@ export interface PlatformSettings {
   adminSessionTimeoutMinutes: number;
 }
 
-export type FlagGateId =
-  | "legal"
-  | "payment_provider"
-  | "store_policy"
-  | "fraud_controls"
-  | "official_rules"
-  | "operations"
-  | "data_quality"
-  | "safety_review";
-
-export interface FlagGate {
-  id: FlagGateId;
-  label: string;
-  /** Only the backend records gates; the demo shows them read-only. */
-  satisfied: boolean;
-}
-
-export interface FeatureFlag {
-  key: string;
-  name: string;
-  description: string;
-  enabled: boolean;
-  /** Percent of the selected audience, 0-100. */
-  rollout: number;
-  audience: string;
-  owner: string;
-  activationGated: boolean;
-  gates: FlagGate[];
-  updatedAt: IsoDateString;
-  updatedBy: string;
-}
-
 export interface ConfigurationData {
   settings: PlatformSettings;
   announcements: Announcement[];
   policies: PolicyVersion[];
-  flags: FeatureFlag[];
 }

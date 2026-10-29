@@ -1,7 +1,13 @@
 export type AsyncStatus = "idle" | "loading" | "succeeded" | "failed";
 
 export type ServiceErrorCode =
-  "NOT_FOUND" | "VALIDATION" | "FORBIDDEN" | "CONFLICT" | "UNAVAILABLE" | "UNKNOWN";
+  | "NOT_FOUND"
+  | "VALIDATION"
+  | "FORBIDDEN"
+  | "UNAUTHENTICATED"
+  | "CONFLICT"
+  | "UNAVAILABLE"
+  | "UNKNOWN";
 
 /** Serializable error shape stored in Redux and returned by every service. */
 export interface ServiceError {
@@ -25,4 +31,6 @@ export interface PaginatedResult<T> {
   total: number;
   page: number;
   pageSize: number;
+  /** False when the backend gives no total; `total` then only guarantees a next page exists. */
+  totalExact?: boolean;
 }

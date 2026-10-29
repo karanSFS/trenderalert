@@ -1,14 +1,9 @@
 import {
-  BASE_REGISTERED_USERS,
   DASHBOARD_ALERTS,
   DASHBOARD_DAILY,
   DEMO_AS_OF,
   FINANCIAL_EXCEPTIONS,
-  MODERATION_CATEGORY_WEIGHTS,
-  PENDING_MODERATION,
-  RECENT_ADMIN_ACTIVITY,
   SUBSCRIPTION_PLAN_WEIGHTS,
-  SYSTEM_HEALTH,
   type DashboardDailyRecord,
 } from "@/data/mock";
 import {
@@ -50,20 +45,9 @@ function buildSummary(range: DashboardRange): DashboardSummary {
   const days = DASHBOARD_RANGE_DAYS[range];
   const current = DASHBOARD_DAILY.slice(-days);
   const previous = DASHBOARD_DAILY.slice(-days * 2, -days);
-  const totalUsersNow = BASE_REGISTERED_USERS + sum(DASHBOARD_DAILY, "registrations");
   const newRegistrations = sum(current, "registrations");
 
   const kpis: KpiMetric[] = [
-    {
-      key: "registeredUsers",
-      label: "Registered users",
-      value: totalUsersNow,
-      previousValue: totalUsersNow - newRegistrations,
-      format: "number",
-      permission: "users:view",
-      href: "/admin/users",
-      higherIsBetter: true,
-    },
     {
       key: "newRegistrations",
       label: "New registrations",
@@ -73,26 +57,6 @@ function buildSummary(range: DashboardRange): DashboardSummary {
       permission: "users:view",
       href: "/admin/users",
       higherIsBetter: true,
-    },
-    {
-      key: "activeTrends",
-      label: "Active Trends",
-      value: last(current, "activeTrends"),
-      previousValue: last(previous, "activeTrends"),
-      format: "number",
-      permission: "trends:view",
-      href: "/admin/trends",
-      higherIsBetter: true,
-    },
-    {
-      key: "pendingModeration",
-      label: "Pending moderation cases",
-      value: last(current, "pendingModeration"),
-      previousValue: last(previous, "pendingModeration"),
-      format: "number",
-      permission: "moderation:view",
-      href: "/admin/moderation",
-      higherIsBetter: false,
     },
     {
       key: "activeContests",
@@ -154,18 +118,11 @@ function buildSummary(range: DashboardRange): DashboardSummary {
       value: record.activeTrends,
     })),
     transactions: bucketTransactions(current, days <= 30 ? 1 : 7),
-    moderationByCategory: splitByWeights(
-      last(current, "pendingModeration"),
-      MODERATION_CATEGORY_WEIGHTS,
-    ),
     subscriptionsByPlan: splitByWeights(
       last(current, "premiumSubscriptions"),
       SUBSCRIPTION_PLAN_WEIGHTS,
     ),
-    recentActivity: RECENT_ADMIN_ACTIVITY,
-    pendingModeration: PENDING_MODERATION,
     financialExceptions: FINANCIAL_EXCEPTIONS,
-    systemHealth: SYSTEM_HEALTH,
   };
 }
 

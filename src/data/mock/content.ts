@@ -4,7 +4,6 @@ import type {
   ContentModerationStatus,
 } from "@/features/content/contentTypes";
 import { createRng, hoursAgo } from "./seed";
-import { TRENDS } from "./trends";
 import { USERS } from "./users";
 
 const POST_CAPTIONS = [
@@ -20,6 +19,70 @@ const POST_CAPTIONS = [
   "Practice session before the open mic.",
 ];
 
+/** Topics for the demo Trend posts in Content (not the live Trends, which come from the API). */
+const TREND_TOPICS = [
+  "Hydration hack claims",
+  "Sunrise rooftop sketch club",
+  "Pop-up repair cafe",
+  "Night market street tacos",
+  "Community garden swaps",
+  "Indie board game nights",
+  "Lunchtime run crews",
+  "Hand-lettered shop signs",
+  "Library seed libraries",
+  "Retro film photo walks",
+  "Silent reading parties",
+  "Upcycled denim patches",
+  "Balcony birdwatch counts",
+  "Rooftop sketch mornings",
+  "Neighborhood fridge network",
+  "Bike bus to school",
+  "Cold plunge meetups",
+  "Vinyl swap Saturdays",
+  "Micro-forest planting",
+  "Open-air chess tables",
+  "Fermentation workshops",
+  "Stairwell choir sessions",
+  "Tiny desk street concerts",
+  "Thrifted furniture flips",
+  "Night sky photo meetups",
+  "Language exchange picnics",
+  "Board shorts in winter challenge",
+  "Handmade ceramics markets",
+  "Midnight bakery queues",
+  "Skate park cleanup crews",
+  "Cardboard boat regatta",
+  "Zine swap meets",
+  "Urban foraging walks",
+  "Retro arcade pop-ups",
+  "Dog-friendly cafe crawl",
+  "Mural restoration days",
+  "Lantern walk evenings",
+  "Home espresso latte art",
+  "Sea glass collecting",
+  "Rain garden builds",
+  "Puzzle swap shelves",
+  "Dance-off at the pier",
+  "Bread starter sharing",
+  "Community radio hour",
+  "Trail running sunrise loops",
+  "Kite festival prep",
+  "Street piano sessions",
+  "Window box flower contest",
+  "Bookshop cat spotting",
+  "Night swim meetups",
+  "Clothes mending circles",
+  "Food truck rally",
+  "Chalk art sidewalks",
+  "Electric scooter tune-ups",
+  "Podcast walk-and-talks",
+  "Plant cutting library",
+  "Twilight yoga on the green",
+  "Miniature painting club",
+  "Comic swap corner",
+  "Solar oven cook-off",
+];
+
 const AUDIENCES: readonly (readonly [Audience, number])[] = [
   ["everyone", 62],
   ["followers", 16],
@@ -29,8 +92,8 @@ const AUDIENCES: readonly (readonly [Audience, number])[] = [
 ];
 
 /**
- * Pre-assigned moderation states so moderation outcomes and copyright cases can point at
- * content that already reflects them. Counts: removed 14, limited 5, under review 8.
+ * Pre-assigned moderation states so copyright cases can point at content that already
+ * reflects them. Counts: removed 14, limited 5, under review 8.
  */
 const REMOVED_TREND_IDS = [
   "trd-8801",
@@ -71,17 +134,19 @@ function statusFor(id: string): ContentModerationStatus {
 
 function generateContent(): ContentItem[] {
   const rng = createRng(22000);
-  const trendPosts: ContentItem[] = TRENDS.map((trend) => {
-    const status = statusFor(trend.id);
+  const trendPosts: ContentItem[] = TREND_TOPICS.map((topic, index) => {
+    const id = `trd-${8790 + index}`;
+    const creator = USERS[(index * 11 + 5) % USERS.length];
+    const status = statusFor(id);
     return {
-      id: trend.id,
+      id,
       type: "trend",
-      creatorId: trend.creatorId,
-      creatorUsername: trend.creatorUsername,
-      caption: `${trend.topic}. Who else has spotted this?`,
+      creatorId: creator.id,
+      creatorUsername: creator.username,
+      caption: `${topic}. Who else has spotted this?`,
       media: rng.chance(0.45) ? "video" : "photo",
       audience: "everyone",
-      publishedAt: trend.publishedAt,
+      publishedAt: hoursAgo(rng.int(1, 24 * 30)),
       moderationStatus: status,
       reportCount:
         status === "visible"

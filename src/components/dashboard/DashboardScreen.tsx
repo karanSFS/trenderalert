@@ -2,9 +2,12 @@
 
 import {
   AlertOutlined,
+  AuditOutlined,
   CreditCardOutlined,
   DollarOutlined,
   ExceptionOutlined,
+  FieldTimeOutlined,
+  PoweroffOutlined,
   ReloadOutlined,
   RiseOutlined,
   TeamOutlined,
@@ -12,28 +15,42 @@ import {
   UserAddOutlined,
 } from "@ant-design/icons";
 import { Alert, Button, Segmented } from "antd";
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, type ReactNode } from "react";
 import styled from "styled-components";
-import { ErrorState } from "@/components/ui/ErrorState";
+import { DemoDataTag } from "@/components/ui/DemoDataTag";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { usePermissionChecker } from "@/features/auth/usePermission";
-import {
-  selectDashboard,
-  selectRecentActivity,
-  selectVisibleKpis,
-} from "@/features/dashboard/dashboardSelectors";
+import { selectDashboard, selectVisibleKpis } from "@/features/dashboard/dashboardSelectors";
 import { fetchDashboard, setDashboardRange } from "@/features/dashboard/dashboardSlice";
 import {
   DASHBOARD_RANGE_DAYS,
+  type BreakdownItem,
   type DashboardRange,
   type DashboardSummary,
   type KpiKey,
   type KpiMetric,
 } from "@/features/dashboard/dashboardTypes";
+import {
+  selectOpenReports,
+  selectPlatformHealth,
+  selectPlatformMetrics,
+  selectRecentAudit,
+} from "@/features/moduleSelectors";
+import type { ModerationReport } from "@/features/moderation/moderationTypes";
 import { selectVisibleNotifications } from "@/features/notifications/notificationsSelectors";
 import { fetchNotifications } from "@/features/notifications/notificationsSlice";
+import {
+  fetchOpenReports,
+  fetchPlatformHealth,
+  fetchPlatformMetrics,
+  fetchRecentAudit,
+} from "@/features/platform/platformSlices";
+import { categoryLabel } from "@/lib/constants/moderationLabels";
 import { formatDate } from "@/lib/formatters/date";
 import { formatCompactCurrency, formatNumber } from "@/lib/formatters/number";
+import { humanizeCode } from "@/lib/formatters/text";
+import { useAdminLabel } from "@/lib/hooks/useAdminLabel";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useChartTheme, type ChartTheme } from "@/styles/chartTheme";
 import type { Permission } from "@/types/auth";
@@ -42,7 +59,7 @@ import { DonutChart, RegistrationsChart, TransactionsChart, TrendActivityChart }
 import { MetricCard } from "./MetricCard";
 import {
   FinancialExceptionsPanel,
-  PendingModerationPanel,
+  OpenReportsPanel,
   RecentActivityPanel,
   RecentAlertsPanel,
   SystemHealthPanel,
@@ -55,10 +72,7 @@ const RANGE_OPTIONS: { label: string; value: DashboardRange }[] = [
 ];
 
 const KPI_ICONS: Record<KpiKey, ReactNode> = {
-  registeredUsers: <TeamOutlined />,
   newRegistrations: <UserAddOutlined />,
-  activeTrends: <RiseOutlined />,
-  pendingModeration: <AlertOutlined />,
   activeContests: <TrophyOutlined />,
   premiumSubscriptions: <CreditCardOutlined />,
   transactionVolume: <DollarOutlined />,
@@ -110,23 +124,6 @@ const CHARTS: ChartDefinition[] = [
     ),
   },
   {
-    key: "moderation",
-    title: "Open moderation cases",
-    subtitle: "Current queue by report category",
-    permission: "moderation:view",
-    isEmpty: (summary) => sumValues(summary.moderationByCategory) === 0,
-    summaryText: (summary) =>
-      summary.moderationByCategory.map((item) => `${item.label}: ${item.value}`).join(", "),
-    render: (summary, theme) => (
-      <DonutChart
-        data={summary.moderationByCategory}
-        theme={theme}
-        height={CHART_HEIGHT}
-        centerLabel="open cases"
-      />
-    ),
-  },
-  {
     key: "subscriptions",
     title: "Premium subscriptions",
     subtitle: "Active subscriptions by plan and store",
@@ -165,16 +162,35 @@ const CHARTS: ChartDefinition[] = [
   },
 ];
 
-const Toolbar = styled.div`
+const SectionHeading = styled.div`
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: ${({ theme }) => theme.space(2)};
+  margin-bottom: ${({ theme }) => theme.space(4)};
+
+  h2 {
+    margin: 0;
+    font-size: ${({ theme }) => theme.font.h4};
+  }
+`;
+
+const Spacer = styled.span`
+  flex: 1;
+`;
+
+const SectionNote = styled.p`
+  margin: -${({ theme }) => theme.space(2)} 0 ${({ theme }) => theme.space(4)};
+  color: ${({ theme }) => theme.colors.textSecondary};
 `;
 
 const Section = styled.section`
   & + & {
-    margin-top: ${({ theme }) => theme.space(6)};
+    margin-top: ${({ theme }) => theme.space(8)};
+  }
+
+  > * + * {
+    margin-top: ${({ theme }) => theme.space(4)};
   }
 `;
 
@@ -227,12 +243,6 @@ const InlineAlert = styled(Alert)`
   margin-bottom: ${({ theme }) => theme.space(4)};
 `;
 
-const ErrorSurface = styled.div`
-  background: ${({ theme }) => theme.colors.surface};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radii.card};
-`;
-
 function formatKpiValue(kpi: KpiMetric): string {
   return kpi.format === "currency" ? formatCompactCurrency(kpi.value) : formatNumber(kpi.value);
 }
@@ -241,15 +251,43 @@ function changeRatio(kpi: KpiMetric): number {
   return kpi.previousValue ? (kpi.value - kpi.previousValue) / kpi.previousValue : 0;
 }
 
+function countByCategory(reports: ModerationReport[]): BreakdownItem[] {
+  const counts = new Map<string, number>();
+  for (const report of reports) {
+    const label = categoryLabel(report.category);
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
 export function DashboardScreen() {
   const dispatch = useAppDispatch();
   const { range, summary, status, error } = useAppSelector(selectDashboard);
   const kpis = useAppSelector(selectVisibleKpis);
-  const recentActivity = useAppSelector(selectRecentActivity);
   const alerts = useAppSelector(selectVisibleNotifications);
   const notificationsStatus = useAppSelector((state) => state.notifications.status);
+  const metrics = useAppSelector(selectPlatformMetrics);
+  const health = useAppSelector(selectPlatformHealth);
+  const openReports = useAppSelector(selectOpenReports);
+  const recentAudit = useAppSelector(selectRecentAudit);
   const can = usePermissionChecker();
+  const adminLabel = useAdminLabel();
   const chartTheme = useChartTheme();
+  const canModerate = can("moderation:view");
+  const canAudit = can("audit:view");
+
+  const loadLive = useCallback(() => {
+    dispatch(fetchPlatformMetrics());
+    dispatch(fetchPlatformHealth());
+    if (canModerate) dispatch(fetchOpenReports());
+    if (canAudit) dispatch(fetchRecentAudit());
+  }, [dispatch, canModerate, canAudit]);
+
+  useEffect(() => {
+    loadLive();
+  }, [loadLive]);
 
   useEffect(() => {
     dispatch(fetchDashboard(range));
@@ -260,104 +298,266 @@ export function DashboardScreen() {
   }, [dispatch, notificationsStatus]);
 
   const initialLoading = !summary && (status === "loading" || status === "idle");
-  const refreshing = Boolean(summary) && status === "loading";
   const days = DASHBOARD_RANGE_DAYS[range];
   const visibleCharts = CHARTS.filter((chart) => can(chart.permission));
+  const live = metrics.data;
+  const liveLoading = !live && metrics.status !== "failed";
+  const liveRefreshing = metrics.status === "loading" || health.status === "loading";
+  const reports = openReports.data ?? [];
 
-  const subtitle = summary
-    ? `Demo data as of ${formatDate(summary.asOf)}, covering ${formatDate(summary.periodStart)} onward (${days} days).`
-    : `Demo data for the last ${days} days.`;
+  const liveCards: { key: string; permission?: Permission; card: ReactNode }[] = [
+    {
+      key: "users",
+      card: (
+        <MetricCard
+          label="Total users"
+          value={formatNumber(live?.totalUsers)}
+          icon={<TeamOutlined />}
+          helper="Registered accounts"
+          loading={liveLoading}
+        />
+      ),
+    },
+    {
+      key: "reports",
+      permission: "moderation:view",
+      card: (
+        <MetricCard
+          label="Open reports"
+          value={formatNumber(live?.openReports)}
+          icon={<AlertOutlined />}
+          helper="Waiting in the moderation queue"
+          href="/admin/moderation"
+          loading={liveLoading}
+        />
+      ),
+    },
+    {
+      key: "sla",
+      permission: "moderation:view",
+      card: (
+        <MetricCard
+          label="SLA breaches"
+          value={formatNumber(live?.slaBreaches)}
+          icon={<FieldTimeOutlined />}
+          helper="High-priority reports past their deadline"
+          href="/admin/moderation"
+          loading={liveLoading}
+        />
+      ),
+    },
+    {
+      key: "appeals",
+      permission: "appeals:view",
+      card: (
+        <MetricCard
+          label="Active appeals"
+          value={formatNumber(live?.activeAppeals)}
+          icon={<AuditOutlined />}
+          helper="Submitted or in review"
+          href="/admin/appeals"
+          loading={liveLoading}
+        />
+      ),
+    },
+    {
+      key: "trends",
+      permission: "trends:view",
+      card: (
+        <MetricCard
+          label="Active Trends"
+          value={formatNumber(health.data?.activeTrends)}
+          icon={<RiseOutlined />}
+          helper="Inside their discovery window"
+          href="/admin/trends"
+          loading={!health.data && health.status !== "failed"}
+        />
+      ),
+    },
+    {
+      key: "kill",
+      card: (
+        <MetricCard
+          label="Kill switches active"
+          value={formatNumber(live?.activeKillSwitches.length)}
+          icon={<PoweroffOutlined />}
+          helper={
+            live?.activeKillSwitches.length
+              ? live.activeKillSwitches.map(humanizeCode).join(", ")
+              : "No features switched off"
+          }
+          href={can("configuration:view") ? "/admin/configuration/feature-flags" : undefined}
+          loading={liveLoading}
+        />
+      ),
+    },
+  ];
 
-  const header = (
-    <PageHeader
-      eyebrow="Overview"
-      title="Dashboard"
-      subtitle={subtitle}
-      actions={
-        <Toolbar>
+  return (
+    <div aria-busy={liveLoading || initialLoading}>
+      <PageHeader
+        eyebrow="Overview"
+        title="Dashboard"
+        subtitle="Live platform status from the TrenderAlert backend, followed by business metrics that still use demo data."
+        actions={
+          <Button
+            icon={<ReloadOutlined />}
+            loading={liveRefreshing}
+            onClick={() => {
+              loadLive();
+              dispatch(fetchDashboard(range));
+            }}
+          >
+            Refresh
+          </Button>
+        }
+      />
+
+      <Section aria-label="Live platform status">
+        <SectionHeading>
+          <h2>Live platform status</h2>
+          {health.data ? (
+            <StatusBadge
+              label={
+                health.data.status.toLowerCase() === "healthy"
+                  ? "Backend healthy"
+                  : humanizeCode(health.data.status)
+              }
+              tone={health.data.status.toLowerCase() === "healthy" ? "success" : "warning"}
+            />
+          ) : null}
+        </SectionHeading>
+        {metrics.status === "failed" ? (
+          <InlineAlert
+            type="error"
+            showIcon
+            title={metrics.error?.message ?? "Live metrics could not be loaded."}
+            action={
+              <Button size="small" onClick={loadLive}>
+                Try again
+              </Button>
+            }
+          />
+        ) : null}
+        <KpiGrid>
+          {liveCards
+            .filter((item) => !item.permission || can(item.permission))
+            .map((item) => (
+              <div key={item.key}>{item.card}</div>
+            ))}
+        </KpiGrid>
+      </Section>
+
+      <Section aria-label="Live operations">
+        <PanelGrid>
+          {canModerate ? (
+            <OpenReportsPanel
+              items={reports}
+              loading={!openReports.data && openReports.status !== "failed"}
+              error={openReports.status === "failed" ? openReports.error?.message : null}
+            />
+          ) : null}
+          {canModerate ? (
+            <ChartCard
+              title="Open reports by category"
+              subtitle="Open and in-review reports"
+              status={openReports.data ? "succeeded" : openReports.status}
+              height={CHART_HEIGHT}
+              isEmpty={reports.length === 0}
+              summary={countByCategory(reports)
+                .map((item) => `${item.label}: ${item.value}`)
+                .join(", ")}
+            >
+              <DonutChart
+                data={countByCategory(reports)}
+                theme={chartTheme}
+                height={CHART_HEIGHT}
+                centerLabel="open reports"
+              />
+            </ChartCard>
+          ) : null}
+          {canAudit ? (
+            <RecentActivityPanel
+              items={recentAudit.data ?? []}
+              loading={!recentAudit.data && recentAudit.status !== "failed"}
+              error={recentAudit.status === "failed" ? recentAudit.error?.message : null}
+              adminLabel={adminLabel}
+            />
+          ) : null}
+          <SystemHealthPanel
+            health={health.data}
+            metrics={live}
+            loading={
+              !health.data && !live && (health.status !== "failed" || metrics.status !== "failed")
+            }
+            error={health.error?.message ?? metrics.error?.message}
+            canOpenOperations={can("operations:view")}
+          />
+        </PanelGrid>
+      </Section>
+
+      <Section aria-label="Business metrics (demo data)">
+        <SectionHeading>
+          <h2>Business metrics</h2>
+          <DemoDataTag />
+          <Spacer />
           <Segmented<DashboardRange>
             aria-label="Date range"
             options={RANGE_OPTIONS}
             value={range}
             onChange={(value) => dispatch(setDashboardRange(value))}
           />
-          <Button
-            icon={<ReloadOutlined />}
-            loading={status === "loading" && !initialLoading}
-            onClick={() => dispatch(fetchDashboard(range))}
-          >
-            Refresh
-          </Button>
-        </Toolbar>
-      }
-    />
-  );
+        </SectionHeading>
+        <SectionNote>
+          {summary
+            ? `Fictional sample data as of ${formatDate(summary.asOf)}, covering ${formatDate(summary.periodStart)} onward (${days} days). These areas have no backend API yet.`
+            : `Fictional sample data for the last ${days} days. These areas have no backend API yet.`}
+        </SectionNote>
 
-  if (!summary && status === "failed") {
-    return (
-      <>
-        {header}
-        <ErrorSurface>
-          <ErrorState
-            title="The dashboard could not be loaded"
-            message={error?.message}
-            onRetry={() => dispatch(fetchDashboard(range))}
+        {status === "failed" ? (
+          <InlineAlert
+            type="error"
+            showIcon
+            title={error?.message ?? "The demo metrics could not be loaded."}
+            action={
+              <Button size="small" onClick={() => dispatch(fetchDashboard(range))}>
+                Try again
+              </Button>
+            }
           />
-        </ErrorSurface>
-      </>
-    );
-  }
+        ) : null}
 
-  const kpiCards = initialLoading
-    ? Array.from({ length: 4 }, (_, index) => (
-        <MetricCard key={index} label="Metric" value="" loading />
-      ))
-    : kpis.map((kpi) => (
-        <MetricCard
-          key={kpi.key}
-          label={kpi.label}
-          value={formatKpiValue(kpi)}
-          icon={KPI_ICONS[kpi.key]}
-          href={kpi.href}
-          helper={kpi.helper}
-          change={{
-            value: changeRatio(kpi),
-            label: `vs previous ${days} days`,
-            higherIsBetter: kpi.higherIsBetter,
-          }}
-        />
-      ));
+        {kpis.length > 0 || initialLoading ? (
+          <KpiGrid>
+            {initialLoading
+              ? Array.from({ length: 4 }, (_, index) => (
+                  <MetricCard key={index} label="Metric" value="" loading />
+                ))
+              : kpis.map((kpi) => (
+                  <MetricCard
+                    key={kpi.key}
+                    demo
+                    label={kpi.label}
+                    value={formatKpiValue(kpi)}
+                    icon={KPI_ICONS[kpi.key]}
+                    href={kpi.href}
+                    helper={kpi.helper}
+                    change={{
+                      value: changeRatio(kpi),
+                      label: `vs previous ${days} days`,
+                      higherIsBetter: kpi.higherIsBetter,
+                    }}
+                  />
+                ))}
+          </KpiGrid>
+        ) : null}
 
-  return (
-    <div aria-busy={initialLoading || refreshing}>
-      {header}
-
-      {summary && status === "failed" ? (
-        <InlineAlert
-          type="error"
-          showIcon
-          title={error?.message ?? "The latest refresh failed."}
-          description="Showing the previously loaded demo data."
-          action={
-            <Button size="small" onClick={() => dispatch(fetchDashboard(range))}>
-              Try again
-            </Button>
-          }
-        />
-      ) : null}
-
-      {kpiCards.length > 0 ? (
-        <Section aria-label="Key metrics">
-          <KpiGrid>{kpiCards}</KpiGrid>
-        </Section>
-      ) : null}
-
-      {visibleCharts.length > 0 ? (
-        <Section aria-label="Charts">
+        {visibleCharts.length > 0 ? (
           <ChartGrid>
             {visibleCharts.map((chart) => (
               <ChartCard
                 key={chart.key}
+                demo
                 title={chart.title}
                 subtitle={chart.subtitle}
                 status={summary ? "succeeded" : status}
@@ -369,34 +569,18 @@ export function DashboardScreen() {
               </ChartCard>
             ))}
           </ChartGrid>
-        </Section>
-      ) : null}
+        ) : null}
 
-      <Section aria-label="Operations">
         <PanelGrid>
-          {can("moderation:view") ? (
-            <PendingModerationPanel
-              items={summary?.pendingModeration ?? []}
-              loading={initialLoading}
-            />
-          ) : null}
           {can("finance:view") ? (
             <FinancialExceptionsPanel
               items={summary?.financialExceptions ?? []}
               loading={initialLoading}
             />
           ) : null}
-          {can("audit:view") ? (
-            <RecentActivityPanel items={recentActivity} loading={initialLoading} />
-          ) : null}
           <RecentAlertsPanel
             items={alerts}
             loading={notificationsStatus === "loading" || notificationsStatus === "idle"}
-          />
-          <SystemHealthPanel
-            items={summary?.systemHealth ?? []}
-            loading={initialLoading}
-            canOpenOperations={can("operations:view")}
           />
         </PanelGrid>
       </Section>

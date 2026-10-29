@@ -1,5 +1,7 @@
 # Security and audit
 
+> **Status (2026-10-29):** Admin users and Audit logs now use the backend (`GET /admin/roles`, assign, revoke; `GET /admin/audit-logs`). Invitations and deactivation are not available in the backend. See [BACKEND_INTEGRATION.md](../BACKEND_INTEGRATION.md); the demo behaviour below is historical.
+
 ### 1. Overview
 
 Administrator directory with invitations, role changes and deactivation, and an append-only audit log of demo administrative actions.

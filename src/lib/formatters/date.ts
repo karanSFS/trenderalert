@@ -62,3 +62,18 @@ export function formatRelativeDays(
   if (days === 1) return "Tomorrow";
   return days < 0 ? `${Math.abs(days)} days ago` : `in ${days} days`;
 }
+
+/** Rough distance from now, e.g. "in 3 h", "45 min ago". Client-only (uses the real clock). */
+export function formatFromNow(value: IsoDateString | null | undefined, now = Date.now()): string {
+  const date = value ? toDate(value) : null;
+  if (!date) return "—";
+  const minutes = Math.round((date.getTime() - now) / 60_000);
+  const abs = Math.abs(minutes);
+  const text =
+    abs < 60
+      ? `${abs} min`
+      : abs < 48 * 60
+        ? `${Math.round(abs / 60)} h`
+        : `${Math.round(abs / 1440)} days`;
+  return minutes >= 0 ? `in ${text}` : `${text} ago`;
+}

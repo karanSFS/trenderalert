@@ -14,7 +14,15 @@ import transactionsReducer from "@/features/finance/transactionsSlice";
 import moderationReducer from "@/features/moderation/moderationSlice";
 import notificationsReducer from "@/features/notifications/notificationsSlice";
 import operationsReducer from "@/features/operations/operationsSlice";
-import adminUsersReducer from "@/features/security/adminUsersSlice";
+import {
+  featureFlagsModule,
+  openReportsModule,
+  platformHealthModule,
+  platformMetricsModule,
+  recentAuditModule,
+  supportLookupModule,
+} from "@/features/platform/platformSlices";
+import adminRolesReducer from "@/features/security/adminRolesSlice";
 import auditLogReducer from "@/features/security/auditLogSlice";
 import layoutReducer from "@/features/settings/layoutSlice";
 import themeReducer from "@/features/settings/themeSlice";
@@ -44,7 +52,13 @@ export const rootReducer = combineReducers({
   support: supportReducer,
   discovery: discoveryReducer,
   configuration: configurationReducer,
-  adminUsers: adminUsersReducer,
+  adminRoles: adminRolesReducer,
   auditLog: auditLogReducer,
   operations: operationsReducer,
+  platformMetrics: platformMetricsModule.reducer,
+  platformHealth: platformHealthModule.reducer,
+  featureFlags: featureFlagsModule.reducer,
+  supportLookup: supportLookupModule.reducer,
+  openReports: openReportsModule.reducer,
+  recentAudit: recentAuditModule.reducer,
 });

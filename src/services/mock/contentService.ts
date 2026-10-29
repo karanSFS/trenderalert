@@ -27,21 +27,6 @@ export const mockContentService: ContentService = {
 
   get: (id) => mockRequest(() => findOrThrow(db.content, id, "Content"), { service: SERVICE }),
 
-  getContext: (id) =>
-    mockRequest(
-      () => {
-        const item = findOrThrow(db.content, id, "Content");
-        return {
-          reports: db.moderation
-            .filter((report) => report.contentId === id)
-            .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
-          trend: db.trends.find((trend) => trend.id === id) ?? null,
-          creator: db.users.find((user) => user.id === item.creatorId) ?? null,
-        };
-      },
-      { service: SERVICE },
-    ),
-
   moderate: (id, action, reason) =>
     mockRequest(
       () => {

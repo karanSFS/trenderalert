@@ -1,15 +1,10 @@
-import type { AuditEvent } from "@/features/audit/auditTypes";
 import type {
   Announcement,
   ConfigurationData,
   PlatformSettings,
 } from "@/features/configuration/configurationTypes";
 import type { Contest, ContestDecision, ContestFilters } from "@/features/contests/contestsTypes";
-import type {
-  DiscoveryConfig,
-  MarketStatus,
-  RankingFactor,
-} from "@/features/discovery/discoveryTypes";
+import type { DiscoveryConfig, MarketStatus } from "@/features/discovery/discoveryTypes";
 import type {
   FinanceOverview,
   ReconciliationFilters,
@@ -21,12 +16,6 @@ import type {
 import type { GeoScope } from "@/features/trends/trendsTypes";
 import type { OperationsSnapshot } from "@/features/operations/operationsTypes";
 import type {
-  AdminAccount,
-  AdminAccountFilters,
-  AdminInvite,
-  AuditLogFilters,
-} from "@/features/security/securityTypes";
-import type {
   Subscription,
   SubscriptionFilters,
 } from "@/features/subscriptions/subscriptionsTypes";
@@ -36,7 +25,6 @@ import type {
   SupportFilters,
   SupportStatus,
 } from "@/features/support/supportTypes";
-import type { AdminRole } from "@/types/auth";
 import type { EntityId } from "@/types/common";
 import type { ActionActor, DirectoryService } from "./directory";
 
@@ -119,8 +107,7 @@ export type DiscoveryUpdate =
   | { type: "market"; id: EntityId; status: MarketStatus }
   | { type: "location"; id: EntityId; active: boolean }
   | { type: "source"; id: EntityId; enabled: boolean }
-  | { type: "relevance"; scope: GeoScope; radiusKm: number }
-  | { type: "ranking"; factors: RankingFactor[]; risingThreshold: number; hotThreshold: number };
+  | { type: "relevance"; scope: GeoScope; radiusKm: number };
 
 export interface DiscoveryService {
   get(): Promise<DiscoveryConfig>;
@@ -141,33 +128,6 @@ export interface ConfigurationService {
   updateSettings(settings: EditableSettings, actor: ActionActor): Promise<ConfigurationData>;
   saveAnnouncement(draft: AnnouncementDraft, actor: ActionActor): Promise<ConfigurationData>;
   endAnnouncement(id: EntityId, actor: ActionActor): Promise<ConfigurationData>;
-  updateFlag(
-    key: string,
-    change: { enabled: boolean; rollout: number },
-    reason: string,
-    actor: ActionActor,
-  ): Promise<ConfigurationData>;
-}
-
-export interface AdminUsersService extends DirectoryService<AdminAccount, AdminAccountFilters> {
-  invite(invite: AdminInvite, actor: ActionActor): Promise<AdminAccount>;
-  changeRole(
-    id: EntityId,
-    role: AdminRole,
-    reason: string,
-    actor: ActionActor,
-  ): Promise<AdminAccount>;
-  setActive(
-    id: EntityId,
-    active: boolean,
-    reason: string,
-    actor: ActionActor,
-  ): Promise<AdminAccount>;
-}
-
-export interface AuditLogService extends DirectoryService<AuditEvent, AuditLogFilters> {
-  /** Administrators for the actor filter. */
-  listActors(): Promise<ActionActor[]>;
 }
 
 export interface OperationsService {

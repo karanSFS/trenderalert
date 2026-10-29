@@ -1,4 +1,5 @@
 import "server-only";
+import { BACKEND_ROLE_TO_ADMIN_ROLE } from "@/lib/constants/roles";
 import type { AdminIdentity, AdminRole } from "@/types/auth";
 import type { ServiceError, ServiceErrorCode } from "@/types/api";
 
@@ -6,14 +7,6 @@ import type { ServiceError, ServiceErrorCode } from "@/types/api";
  * Server-side client for the TrenderAlert backend authentication API. Only route handlers use
  * it; access and refresh tokens never reach browser JavaScript.
  */
-
-const BACKEND_ROLE_MAP: Record<string, AdminRole> = {
-  SUPER_ADMIN: "super_admin",
-  CONTENT_MODERATOR: "content_moderator",
-  SUPPORT_AGENT: "support_agent",
-  FINANCE_ADMIN: "finance_admin",
-  CONTEST_ADMIN: "contest_admin",
-};
 
 export interface BackendUser {
   user_id: string;
@@ -53,7 +46,7 @@ function baseUrl(): string {
   if (!url) {
     throw new BackendError(
       "UNAVAILABLE",
-      "The sign-in service is not configured. Set TRENDERALERT_API_URL on the server.",
+      "The TrenderAlert service is not configured. Set TRENDERALERT_API_URL on the server.",
       503,
     );
   }
@@ -69,7 +62,7 @@ function codeForStatus(status: number): ServiceErrorCode {
   return "UNKNOWN";
 }
 
-async function readError(response: Response): Promise<BackendError> {
+export async function readError(response: Response): Promise<BackendError> {
   let body: BackendErrorBody | null = null;
   try {
     body = (await response.json()) as BackendErrorBody;
@@ -82,14 +75,18 @@ async function readError(response: Response): Promise<BackendError> {
     body?.message ??
     (typeof body?.detail === "string" ? body.detail : null) ??
     `The backend responded with status ${response.status}.`;
-  return new BackendError(codeForStatus(response.status), message, response.status);
+  const code = response.status === 401 ? "UNAUTHENTICATED" : codeForStatus(response.status);
+  return new BackendError(code, message, response.status);
 }
 
-async function request<T>(path: string, init: RequestInit & { token?: string } = {}): Promise<T> {
+/** Raw call to the backend. Throws only when the backend cannot be reached. */
+export async function backendFetch(
+  path: string,
+  init: RequestInit & { token?: string } = {},
+): Promise<Response> {
   const { token, headers, ...rest } = init;
-  let response: Response;
   try {
-    response = await fetch(`${baseUrl()}${path}`, {
+    return await fetch(`${baseUrl()}${path}`, {
       ...rest,
       cache: "no-store",
       signal: AbortSignal.timeout(15_000),
@@ -104,10 +101,14 @@ async function request<T>(path: string, init: RequestInit & { token?: string } =
     if (error instanceof BackendError) throw error;
     throw new BackendError(
       "UNAVAILABLE",
-      "The sign-in service could not be reached. Try again.",
+      "The TrenderAlert service could not be reached. Try again.",
       503,
     );
   }
+}
+
+async function request<T>(path: string, init: RequestInit & { token?: string } = {}): Promise<T> {
+  const response = await backendFetch(path, init);
   if (!response.ok) throw await readError(response);
   return (await response.json()) as T;
 }
@@ -151,7 +152,9 @@ export function tokenExpiresAt(token: string): number | null {
 }
 
 function mapRole(value: unknown): AdminRole | null {
-  return typeof value === "string" ? (BACKEND_ROLE_MAP[value.toUpperCase()] ?? null) : null;
+  return typeof value === "string"
+    ? (BACKEND_ROLE_TO_ADMIN_ROLE[value.toUpperCase()] ?? null)
+    : null;
 }
 
 /**

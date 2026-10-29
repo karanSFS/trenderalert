@@ -1,27 +1,15 @@
 import { usersService } from "@/services";
-import type { UserActivity } from "@/services/contracts/moduleServices";
 import { createDirectorySlice } from "@/store/createDirectorySlice";
-import type { EntityId } from "@/types/common";
-import type { PlatformUser, UserEnforcementAction, UserFilters } from "./usersTypes";
+import type { DirectoryUser, DirectoryUserFilters } from "./usersTypes";
 
-export const usersModule = createDirectorySlice<PlatformUser, UserFilters, UserActivity>({
+/** Backend user directory. Read-only: enforcement goes through moderation reports. */
+export const usersModule = createDirectorySlice<DirectoryUser, DirectoryUserFilters>({
   name: "users",
   service: usersService,
-  initialFilters: { status: undefined, plan: undefined, verification: undefined },
-  list: { sortField: "registeredAt", sortOrder: "descend" },
-  getContext: (id) => usersService.getActivity(id),
+  initialFilters: { status: undefined, minor: undefined },
+  list: { pageSize: 20 },
 });
 
-export const enforceUser = usersModule.createMutation<{
-  id: EntityId;
-  action: UserEnforcementAction;
-  reason: string;
-}>("enforce", ({ id, action, reason }, actor) => usersService.enforce(id, action, reason, actor));
-
 export const usersActions = usersModule.actions;
-export const {
-  fetchList: fetchUsers,
-  fetchOne: fetchUser,
-  fetchContext: fetchUserActivity,
-} = usersModule;
+export const { fetchList: fetchUsers, fetchOne: fetchUser } = usersModule;
 export default usersModule.reducer;

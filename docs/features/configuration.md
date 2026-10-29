@@ -1,5 +1,7 @@
 # Configuration and feature flags
 
+> **Status (2026-10-29):** Feature flags now use the backend (`GET/POST /admin/configs/feature-flags`: on/off, regions, settings JSON, justification). Settings, announcements and policy versions remain demo data. See [BACKEND_INTEGRATION.md](../BACKEND_INTEGRATION.md).
+
 ### 1. Overview
 
 Platform settings (editable and fixed-by-policy), announcements, policy versions, and feature flags with read-only gates.

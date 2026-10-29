@@ -23,7 +23,6 @@ import type {
 } from "@/features/finance/financeTypes";
 import type { HealthStatus } from "@/features/dashboard/dashboardTypes";
 import type { IncidentSeverity, IncidentStatus } from "@/features/operations/operationsTypes";
-import type { AdminAccountStatus } from "@/features/security/securityTypes";
 import type {
   EntitlementStatus,
   SubscriptionStatus,
@@ -194,12 +193,6 @@ export const POLICY_KIND_LABELS: Record<PolicyKind, string> = {
   copyright: "Copyright Policy",
   contest_rules: "Contest Official Rules",
   retention: "Data Retention",
-};
-
-export const ADMIN_STATUS: Record<AdminAccountStatus, BadgeSpec> = {
-  active: { label: "Active", tone: "success" },
-  invited: { label: "Invited", tone: "info" },
-  deactivated: { label: "Deactivated", tone: "neutral" },
 };
 
 export const HEALTH_STATUS: Record<HealthStatus, BadgeSpec> = {

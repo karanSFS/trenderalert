@@ -20,7 +20,7 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 | Shared admin route configuration                                    | `adminRoutes.ts`, `adminNavigation.tsx`            | —                               | Done    | Drives nav, breadcrumbs, titles, guards                             |
 | Breadcrumbs on nested admin pages                                   | `AdminBreadcrumbs`                                 | —                               | Done    |                                                                     |
 | Custom 404, loading and error states                                | `not-found.tsx`, `error.tsx`, admin equivalents    | —                               | Done    |                                                                     |
-| Backend authentication for five admin roles                         | `AdminLoginScreen`, `/api/auth/*` route handlers   | `auth` slice, `apiAuthService`  | Done    | Role inferred until the backend returns it; no MFA step yet         |
+| Backend authentication for five admin roles                         | `AdminLoginScreen`, `/api/auth/*` route handlers   | `auth` slice, `apiAuthService`  | Done    | Role from `admin_role`; no MFA step yet                             |
 | Centralized permission configuration and role-restricted navigation | `roles.ts`, `AdminSidebar`, `RouteAccessGuard`     | `selectHasPermission`           | Done    | Action-level checks arrive with modules                             |
 | Demo mode clearly labeled                                           | `DemoModeBanner`, header DEMO tag, login copy      | —                               | Done    |                                                                     |
 | Documentation foundation                                            | `docs/`                                            | —                               | Done    |                                                                     |
@@ -59,20 +59,20 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 
 ## Admin modules (Phases 4-6)
 
-| Area                            | Route(s)                                                                            | Spec references                                    | Status                                                        |
-| ------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------- |
-| Dashboard                       | `/admin/dashboard`                                                                  | Prompt section 10                                  | Done (see below)                                              |
-| Users                           | `/admin/users`, `/admin/users/[id]`                                                 | Prompt section 11; D-10 deletion grace             | Done (`features/user-management.md`)                          |
-| Content                         | `/admin/content`                                                                    | CNT14-001 Trend vs Profile Post                    | Done (`features/content-management.md`)                       |
-| Trends                          | `/admin/trends`                                                                     | CNT14-002 fixed 30-day max, no extension; RANK14-* | Done (`features/trend-management.md`)                         |
-| Moderation, appeals, copyright  | `/admin/moderation`, `/admin/moderation/[id]`, `/admin/appeals`, `/admin/copyright` | Prompt section 13                                  | Done (`features/moderation.md`, `appeals.md`, `copyright.md`) |
-| Contests                        | `/admin/contests`, `/admin/contests/[id]`                                           | D-07, D-08; paid contests activation-gated         | Done (`features/contests.md`)                                 |
-| Subscriptions and finance       | `/admin/subscriptions`, `/admin/finance/*`                                          | D-05; reconciliation goal                          | Done (`features/subscriptions.md`, `finance.md`)              |
-| Support                         | `/admin/support`                                                                    | Support agent limits                               | Done (`features/support.md`)                                  |
-| Discovery                       | `/admin/discovery`                                                                  | RANK14-001..004                                    | Done (`features/discovery.md`)                                |
-| Configuration and feature flags | `/admin/configuration`, `/admin/configuration/feature-flags`                        | Activation-gated features                          | Done (`features/configuration.md`)                            |
-| Admin users and audit logs      | `/admin/security/*`                                                                 | Super admin, all actions audited                   | Done (`features/security-and-audit.md`)                       |
-| Operations                      | `/admin/operations`                                                                 | SCL14-010 monitoring                               | Done (`features/operations.md`)                               |
+| Area                            | Route(s)                                                                            | Spec references                                    | Status                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------------- |
+| Dashboard                       | `/admin/dashboard`                                                                  | Prompt section 10                                  | Done; live section on backend (`BACKEND_INTEGRATION.md`) |
+| Users                           | `/admin/users`, `/admin/users/[id]`                                                 | Prompt section 11; D-10 deletion grace             | Done; backend directory (read-only)                      |
+| Content                         | `/admin/content`                                                                    | CNT14-001 Trend vs Profile Post                    | Done (`features/content-management.md`)                  |
+| Trends                          | `/admin/trends`                                                                     | CNT14-002 fixed 30-day max, no extension; RANK14-* | Done; backend (read-only)                                |
+| Moderation, appeals, copyright  | `/admin/moderation`, `/admin/moderation/[id]`, `/admin/appeals`, `/admin/copyright` | Prompt section 13                                  | Done; moderation and appeals on backend, copyright demo  |
+| Contests                        | `/admin/contests`, `/admin/contests/[id]`                                           | D-07, D-08; paid contests activation-gated         | Done (`features/contests.md`)                            |
+| Subscriptions and finance       | `/admin/subscriptions`, `/admin/finance/*`                                          | D-05; reconciliation goal                          | Done (`features/subscriptions.md`, `finance.md`)         |
+| Support                         | `/admin/support`                                                                    | Support agent limits                               | Done; account lookup on backend, cases demo              |
+| Discovery                       | `/admin/discovery`                                                                  | RANK14-001..004                                    | Done; ranking weights on backend, rest demo              |
+| Configuration and feature flags | `/admin/configuration`, `/admin/configuration/feature-flags`                        | Activation-gated features                          | Done; feature flags on backend, settings demo            |
+| Admin users and audit logs      | `/admin/security/*`                                                                 | Super admin, all actions audited                   | Done; backend                                            |
+| Operations                      | `/admin/operations`                                                                 | SCL14-010 monitoring                               | Done; live status on backend, rest simulated             |
 
 ### Dashboard detail (Phase 4)
 
@@ -89,19 +89,19 @@ Sources: the frontend master prompt (sections 1-26) and the client specification
 
 ### Operational administration detail (Phase 6)
 
-| Requirement                                                | Implementation                                                       | Status | Notes                                                                            |
-| ---------------------------------------------------------- | -------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
-| Paid-contest activation stays disabled                     | `contestActionBlock`, contests service, `paid_contests` flag gates   | Done   | Rejected in the UI and again in the service                                      |
-| Legal, payment-provider and operations approvals not faked | Read-only approval badges from mock data                             | Done   | Only `ctst-300` has every approval recorded                                      |
-| Refunds never overwrite transaction history                | `requestRefund` creates a linked record                              | Done   | Original keeps its amount; gains `refundedBy`                                    |
-| Reconciliation resolution keeps history                    | `resolveException` appends history and a resolution                  | Done   |                                                                                  |
-| Support sees limited personal data                         | Masked contact, privacy notice                                       | Done   | Masking must also be enforced by the backend                                     |
-| Settings limited to approved values                        | Editable vs fixed-by-policy settings                                 | Done   | 30-day maximum, 30-day deletion grace, ages 13 and 18, one warning, remote price |
-| Ranking weights validated                                  | Discovery ranking tab and service                                    | Done   | Must total 100%; labeled as a proposal                                           |
-| Admins cannot change or deactivate themselves; MFA shown   | Admin users screen and service                                       | Done   | One active Super Admin always remains                                            |
-| Audit log append-only, export disabled                     | Audit log screen; `auditService.record` appends to the demo database | Done   | Export shows "Requires backend authorization"                                    |
-| Operations data labeled simulated                          | Operations banner and subtitle                                       | Done   | Backlog counts come from demo records                                            |
-| Every admin route has a real page                          | `[...slug]` catch-all now returns 404                                | Done   | `ModulePlaceholder` removed                                                      |
+| Requirement                                                | Implementation                                                     | Status | Notes                                                                            |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ | ------ | -------------------------------------------------------------------------------- |
+| Paid-contest activation stays disabled                     | `contestActionBlock`, contests service, `paid_contests` flag gates | Done   | Rejected in the UI and again in the service                                      |
+| Legal, payment-provider and operations approvals not faked | Read-only approval badges from mock data                           | Done   | Only `ctst-300` has every approval recorded                                      |
+| Refunds never overwrite transaction history                | `requestRefund` creates a linked record                            | Done   | Original keeps its amount; gains `refundedBy`                                    |
+| Reconciliation resolution keeps history                    | `resolveException` appends history and a resolution                | Done   |                                                                                  |
+| Support sees limited personal data                         | Masked contact, privacy notice                                     | Done   | Masking must also be enforced by the backend                                     |
+| Settings limited to approved values                        | Editable vs fixed-by-policy settings                               | Done   | 30-day maximum, 30-day deletion grace, ages 13 and 18, one warning, remote price |
+| Ranking weights validated                                  | Discovery ranking tab and service                                  | Done   | Must total 100%; labeled as a proposal                                           |
+| Admins cannot change or deactivate themselves; MFA shown   | Admin users screen and service                                     | Done   | One active Super Admin always remains                                            |
+| Audit log append-only, export disabled                     | Audit log screen on `GET /admin/audit-logs`                        | Done   | Export shows "Requires backend authorization"                                    |
+| Operations data labeled simulated                          | Operations banner and subtitle                                     | Done   | Backlog counts come from demo records                                            |
+| Every admin route has a real page                          | `[...slug]` catch-all now returns 404                              | Done   | `ModulePlaceholder` removed                                                      |
 
 ## Quality (Phase 7)
 

@@ -1,46 +1,34 @@
 import { moderationService } from "@/services";
-import type { ActionActor } from "@/services/contracts/directory";
-import type { CaseContext } from "@/services/contracts/moduleServices";
 import { createDirectorySlice } from "@/store/createDirectorySlice";
 import type { EntityId } from "@/types/common";
-import type { ModerationActionType, ModerationCase, ModerationFilters } from "./moderationTypes";
+import type { ModerationAction, ModerationFilters, ModerationReport } from "./moderationTypes";
 
-export const moderationModule = createDirectorySlice<
-  ModerationCase,
-  ModerationFilters,
-  CaseContext
->({
+export const moderationModule = createDirectorySlice<ModerationReport, ModerationFilters>({
   name: "moderation",
   service: moderationService,
-  initialFilters: {
-    status: undefined,
-    priority: undefined,
-    category: undefined,
-    assignee: undefined,
-    openOnly: true,
-  },
-  list: { sortField: "priority", sortOrder: "descend" },
-  getContext: (id) => moderationService.getContext(id),
+  initialFilters: { status: undefined, category: undefined, priority: undefined },
+  list: { pageSize: 20 },
 });
 
-export const assignCase = moderationModule.createMutation<{
+export const assignReport = moderationModule.createMutation<{
   id: EntityId;
-  reviewer: ActionActor | null;
-}>("assign", ({ id, reviewer }, actor) => moderationService.assign(id, reviewer, actor));
-export const addCaseNote = moderationModule.createMutation<{ id: EntityId; text: string }>(
-  "addNote",
-  ({ id, text }, actor) => moderationService.addNote(id, text, actor),
+  adminUserId: EntityId | null;
+}>("assign", ({ id, adminUserId }) => moderationService.assign(id, adminUserId));
+
+export const addReportNote = moderationModule.createMutation<{ id: EntityId; notes: string }>(
+  "note",
+  ({ id, notes }) => moderationService.addNote(id, notes),
 );
-export const actOnCase = moderationModule.createMutation<{
+
+export const actOnReport = moderationModule.createMutation<{
   id: EntityId;
-  action: ModerationActionType;
-  reason: string;
-}>("act", ({ id, action, reason }, actor) => moderationService.act(id, action, reason, actor));
+  action: ModerationAction;
+  justification: string;
+  notes?: string;
+}>("act", ({ id, action, justification, notes }) =>
+  moderationService.act(id, action, justification, notes),
+);
 
 export const moderationActions = moderationModule.actions;
-export const {
-  fetchList: fetchCases,
-  fetchOne: fetchCase,
-  fetchContext: fetchCaseContext,
-} = moderationModule;
+export const { fetchList: fetchReports, fetchOne: fetchReport } = moderationModule;
 export default moderationModule.reducer;

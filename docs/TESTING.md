@@ -29,6 +29,20 @@ Requires `TRENDERALERT_API_URL` in `.env.local` and the backend running. Use the
 4. **Sign out** returns to the sign-in page; opening `/admin/dashboard` then redirects to `/admin/login?next=%2Fadmin%2Fdashboard`.
 5. Stop the backend and sign in: "The sign-in service could not be reached."
 
+### Backend-connected modules
+
+Sign in as each backend account. Check that:
+
+1. **Dashboard:** the live section shows metrics without "Demo data" tags; the business section below is tagged.
+2. **Users:** shows the backend total ("of 765"); search and the status filter narrow it; non-Super-Admin roles see masked emails.
+3. **Moderation:** filters change the list and the total; a report page shows SLA, notes, Assign to me and only the actions its target allows.
+4. **Trends:** a drawer shows the TrendScore breakdown and journey.
+5. **Feature flags:** editing requires a justification; `ENABLE_PAID_CONTESTS` cannot be switched on.
+6. **Admin users / Audit logs:** names and emails appear; your own role cannot be changed or revoked.
+7. **Session end:** delete the `ta_access` and `ta_refresh` cookies and act on any live screen; you return to sign-in with "Your session has ended".
+
+Actions change real backend data. Use test records and write justifications that start with "QA test".
+
 ### Role permissions
 
 1. Sign in as Super Administrator. All sidebar sections show.

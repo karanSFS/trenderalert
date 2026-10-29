@@ -1,5 +1,7 @@
 # Operations
 
+> **Status (2026-10-29):** A live status card uses `GET /health` and the dashboard metrics. Objectives, queues, incidents and backlog remain simulated. See [BACKEND_INTEGRATION.md](../BACKEND_INTEGRATION.md).
+
 ### 1. Overview
 
 Simulated operations snapshot: backlog counts, incidents with acknowledgement, scheduled maintenance, service objectives and queues.

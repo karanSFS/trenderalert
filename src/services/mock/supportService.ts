@@ -1,3 +1,4 @@
+import { SUPPORT_AGENTS } from "@/data/mock";
 import type { SupportStatus } from "@/features/support/supportTypes";
 import { ESCALATION_LABELS } from "@/lib/constants/operationalLabels";
 import type { SupportService } from "@/services/contracts/operationalServices";
@@ -47,13 +48,10 @@ export const mockSupportService: SupportService = {
   get: (id) => mockRequest(() => caseOf(id), { service: SERVICE }),
 
   listAgents: () =>
-    mockRequest(
-      () =>
-        db.adminUsers
-          .filter((item) => item.role === "support_agent" && item.status === "active")
-          .map((item) => ({ id: item.id, name: item.displayName })),
-      { service: SERVICE, delayMs: 0 },
-    ),
+    mockRequest(() => SUPPORT_AGENTS.map((agent) => ({ ...agent })), {
+      service: SERVICE,
+      delayMs: 0,
+    }),
 
   assign: (id, agent, actor) =>
     mockRequest(

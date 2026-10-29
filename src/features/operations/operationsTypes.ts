@@ -46,7 +46,6 @@ export interface OperationsSnapshot {
   incidents: Incident[];
   maintenance: MaintenanceWindow[];
   backlog: {
-    openModerationCases: number;
     openSupportCases: number;
     openFinancialExceptions: number;
     abuseSignals: number;

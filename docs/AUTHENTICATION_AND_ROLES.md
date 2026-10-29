@@ -28,14 +28,7 @@ sequenceDiagram
 
 ### How the role is resolved
 
-The backend's login response, JWT and `/auth/me` do not include the administrator role. `resolveAdminRole` therefore checks, in order:
-
-1. `user.role` or `user.admin_role` (preferred; not returned by the backend yet);
-2. a `role` claim in the access token (not issued yet);
-3. `GET /api/v1/admin/roles`, which lists every assignment but is only allowed for Super Admins;
-4. for other roles, the role named in that endpoint's 403 message ("Role 'SUPPORT_AGENT' does not have permission…").
-
-Step 4 is an interim workaround. **Backend request:** return the caller's role (for example `user.role`) from `/auth/login` and `/auth/me`; steps 1 and 2 will then pick it up with no frontend change.
+The backend returns the caller's role as `user.admin_role` from `/auth/login` and `/auth/me`. `resolveAdminRole` uses it first. Older fallbacks (a `role` token claim, `GET /admin/roles`, the role named in a 403 message) remain only for backends that omit the field.
 
 Backend role names map to frontend roles as follows: `SUPER_ADMIN` → `super_admin`, `CONTENT_MODERATOR` → `content_moderator`, `SUPPORT_AGENT` → `support_agent`, `FINANCE_ADMIN` → `finance_admin`, `CONTEST_ADMIN` → `contest_admin`.
 

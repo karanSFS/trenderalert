@@ -28,6 +28,7 @@ interface MetricCardProps {
   /** Makes the whole card a link to the related admin page. */
   href?: string;
   loading?: boolean;
+  /** Shows the "Demo data" tag for figures that are not from the backend. */
   demo?: boolean;
 }
 
@@ -140,7 +141,7 @@ export function MetricCard({
   icon,
   href,
   loading = false,
-  demo = true,
+  demo = false,
 }: MetricCardProps) {
   const showSkeleton = useDelayedFlag(loading);
 

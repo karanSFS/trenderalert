@@ -1,67 +1,44 @@
-import type { CasePriority } from "@/features/dashboard/dashboardTypes";
-import type { EntityId, IsoDateString, TimelineEntry } from "@/types/common";
+import type { EntityId, IsoDateString } from "@/types/common";
 
-export type { CasePriority };
+/** Values defined by the backend (`ModerationStatusEnum`, `ModerationCategoryEnum`). */
+export type ReportStatus = "OPEN" | "IN_REVIEW" | "ACTION_TAKEN" | "DISMISSED";
+export type ReportCategory =
+  "HARASSMENT" | "HATE" | "COPYRIGHT" | "MINOR_SAFETY" | "IMMINENT_HARM" | "SPAM";
 
-export type CaseStatus = "new" | "in_review" | "escalated" | "actioned" | "dismissed";
-export type CaseTargetType = "content" | "account" | "message" | "room";
+/** Actions accepted by `POST /admin/moderation/queue/{id}/action`. */
+export type ModerationAction =
+  "WARN" | "SUPPRESS_CONTENT" | "RESTRICT_FEATURE" | "SUSPEND_USER" | "BAN_USER" | "DISMISS";
 
-export type ModerationActionType =
-  | "dismiss"
-  | "warn"
-  | "remove_content"
-  | "limit_content"
-  | "restrict_account"
-  | "suspend_account"
-  | "escalate";
-
-export interface CaseNote {
+export interface ModerationReport {
   id: EntityId;
-  at: IsoDateString;
-  author: string;
-  text: string;
-}
-
-export interface ModerationCase {
-  id: EntityId;
+  targetTrendId: EntityId | null;
+  targetUserId: EntityId | null;
+  /** Usually a `ReportCategory`; unknown values from the backend are shown as-is. */
   category: string;
-  priority: CasePriority;
-  status: CaseStatus;
-  targetType: CaseTargetType;
-  /** Content id when the report is about a Trend or Profile Post. */
-  contentId: EntityId | null;
-  /** The reported (or content-owning) account. */
-  accountId: EntityId;
-  reportedItemLabel: string;
-  reporterCount: number;
-  details: string;
-  submittedAt: IsoDateString;
-  assignedReviewerId: EntityId | null;
-  assignedReviewerName: string | null;
-  notes: CaseNote[];
-  history: TimelineEntry[];
-  outcome: { action: ModerationActionType; reason: string; at: IsoDateString; by: string } | null;
+  /** 1 (most urgent) to 5. */
+  priority: number;
+  assignedAdminId: EntityId | null;
+  assignedAdminName: string | null;
+  assignedAdminEmail: string | null;
+  slaDueAt: IsoDateString;
+  moderatorNotes: string | null;
+  status: ReportStatus;
+  createdAt: IsoDateString;
+  resolvedAt: IsoDateString | null;
 }
 
 export interface ModerationFilters {
-  status?: CaseStatus;
-  priority?: CasePriority;
-  category?: string;
-  /** "unassigned" or an admin id. */
-  assignee?: string;
-  /** Show only open cases (new, in review, escalated). Defaults to true. */
-  openOnly?: boolean;
+  status?: ReportStatus;
+  category?: ReportCategory;
+  /** "1" to "5" (kept as a string for the filter select). */
+  priority?: string;
 }
 
-export const OPEN_CASE_STATUSES: CaseStatus[] = ["new", "in_review", "escalated"];
+export const OPEN_REPORT_STATUSES: ReportStatus[] = ["OPEN", "IN_REVIEW"];
 
-export const MODERATION_CATEGORIES = [
-  "Spam or scams",
-  "Harassment or bullying",
-  "Nudity or sexual content",
-  "Hate speech",
-  "Misinformation",
-  "Violence or threats",
-  "Impersonation",
-  "Other",
-] as const;
+export const isReportOpen = (report: ModerationReport) =>
+  OPEN_REPORT_STATUSES.includes(report.status);
+
+/** Open report whose SLA deadline has passed. */
+export const isSlaBreached = (report: ModerationReport, now = Date.now()) =>
+  isReportOpen(report) && Date.parse(report.slaDueAt) < now;

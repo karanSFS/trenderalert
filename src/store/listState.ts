@@ -13,6 +13,8 @@ export interface ListState<TFilters> {
   query: ListQueryOf<TFilters>;
   ids: EntityId[];
   total: number;
+  /** False when the source cannot count results (offset paging without a total). */
+  totalExact: boolean;
   status: AsyncStatus;
   error: ServiceError | null;
   /** Id of the newest list request; responses from older requests are ignored. */
@@ -36,6 +38,7 @@ export function createListState<TFilters>(
     },
     ids: [],
     total: 0,
+    totalExact: true,
     status: "idle",
     error: null,
     requestId: null,
@@ -97,11 +100,12 @@ export const listLifecycle = {
   },
   fulfilled<TFilters>(
     list: ListState<TFilters>,
-    result: { ids: EntityId[]; total: number; page: number },
+    result: { ids: EntityId[]; total: number; page: number; totalExact?: boolean },
   ) {
     list.status = "succeeded";
     list.ids = result.ids;
     list.total = result.total;
+    list.totalExact = result.totalExact ?? true;
     list.query.page = result.page;
   },
   rejected<TFilters>(list: ListState<TFilters>, error: ServiceError | undefined) {

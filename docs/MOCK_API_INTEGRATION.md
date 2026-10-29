@@ -1,5 +1,7 @@
 # Mock API Integration
 
+> Moderation, appeals, users, Trends, feature flags, admin roles, audit logs, the support lookup and platform metrics are connected to the backend; their mock services were removed. See [BACKEND_INTEGRATION.md](BACKEND_INTEGRATION.md). This document now covers the remaining demo modules.
+
 ## How mock services work
 
 ```

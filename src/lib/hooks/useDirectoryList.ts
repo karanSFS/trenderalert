@@ -64,7 +64,12 @@ export function useDirectoryList<T, TFilters extends object>(
       status: list.status,
       error: list.error,
       onRetry: refetch,
-      pagination: { page: query.page, pageSize: query.pageSize, total: list.total },
+      pagination: {
+        page: query.page,
+        pageSize: query.pageSize,
+        total: list.total,
+        totalExact: list.totalExact,
+      },
       sort: { sortField: query.sortField, sortOrder: query.sortOrder },
       onPageChange: (change: PageChange) => dispatch(actions.setPage(change)),
       onSortChange: (change: SortChange) => dispatch(actions.setSort(change)),

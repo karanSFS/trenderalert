@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckOutlined, RollbackOutlined } from "@ant-design/icons";
-import { Button, Tooltip, type TableColumnsType } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
+import { Button, type TableColumnsType } from "antd";
+import Link from "next/link";
 import { useEffect } from "react";
 import styled from "styled-components";
-import { Can } from "@/components/auth/Can";
+import { ActionButtons } from "@/components/ui/ActionButtons";
 import { DataTable } from "@/components/ui/DataTable";
 import { DetailDrawer, DetailList, DetailSection } from "@/components/ui/DetailDrawer";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -12,133 +13,153 @@ import { EntityLink } from "@/components/ui/EntityLink";
 import { FilterBar } from "@/components/ui/FilterBar";
 import { Identity } from "@/components/ui/Identity";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { RowActions } from "@/components/ui/RowActions";
+import { RowActions, type RowActionItem } from "@/components/ui/RowActions";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Timeline } from "@/components/ui/Timeline";
 import { useConfirm, type ConfirmSpec } from "@/components/ui/useConfirm";
 import {
   appealsActions,
-  decideAppeal,
   fetchAppeal,
-  fetchAppealCase,
   fetchAppeals,
+  resolveAppeal,
 } from "@/features/appeals/appealsSlice";
-import type { Appeal, AppealFilters } from "@/features/appeals/appealsTypes";
-import { appealsSelectors } from "@/features/moduleSelectors";
 import {
-  APPEAL_STATUS,
-  CASE_STATUS,
-  MODERATION_ACTION_LABELS,
-  toOptions,
-} from "@/lib/constants/statusLabels";
-import { formatDate, formatDateTime } from "@/lib/formatters/date";
-import { useDemoAction } from "@/lib/hooks/useDemoAction";
+  isAppealOpen,
+  type Appeal,
+  type AppealFilters,
+  type AppealOutcome,
+} from "@/features/appeals/appealsTypes";
+import { appealsSelectors } from "@/features/moduleSelectors";
+import { APPEAL_STATUS } from "@/lib/constants/moderationLabels";
+import { toOptions } from "@/lib/constants/statusLabels";
+import { formatDateTime } from "@/lib/formatters/date";
+import { maskEmail, shortId } from "@/lib/formatters/text";
+import { useApiAction } from "@/lib/hooks/useApiAction";
 import { useDirectoryList } from "@/lib/hooks/useDirectoryList";
 import { useOpenParam } from "@/lib/hooks/useOpenParam";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
+const Statement = styled.p`
+  margin: 0;
+  white-space: pre-wrap;
+`;
+
+const Excerpt = styled.span`
+  display: -webkit-box;
+  max-width: 420px;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+`;
+
 const Evidence = styled.ul`
   margin: 0;
-  padding: 0;
-  list-style: none;
-
-  li + li {
-    margin-top: ${({ theme }) => theme.space(3)};
-  }
-
-  strong {
-    display: block;
-  }
-
-  span {
-    color: ${({ theme }) => theme.colors.textSecondary};
-  }
+  padding-left: ${({ theme }) => theme.space(5)};
+  word-break: break-all;
 `;
 
-const DrawerActions = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: ${({ theme }) => theme.space(2)};
-`;
-
-const ACTION_OPTIONS = (
-  ["warn", "remove_content", "limit_content", "restrict_account", "suspend_account"] as const
-).map((action) => ({ value: action, label: MODERATION_ACTION_LABELS[action] }));
-
-const isDecided = (appeal: Appeal) => appeal.status === "upheld" || appeal.status === "reversed";
-
-function useAppealDecision(confirm: (spec: ConfirmSpec) => void, after: () => void) {
-  const dispatch = useAppDispatch();
-  const { run } = useDemoAction();
-  return (appeal: Appeal, outcome: "upheld" | "reversed") =>
-    confirm({
-      title:
-        outcome === "upheld"
-          ? `Uphold the decision on ${appeal.caseId}`
-          : `Reverse the decision on ${appeal.caseId}`,
-      description: `Appeal ${appeal.id} by @${appeal.username} against "${MODERATION_ACTION_LABELS[appeal.originalDecision.action]}".`,
-      consequences:
-        outcome === "upheld"
-          ? [
-              "The original enforcement stays in place.",
-              "The member is told the outcome and the reason.",
-            ]
-          : [
-              "Undoes the original enforcement (restores content or account access) and removes the strike.",
-              "The member is told the outcome and the reason.",
-            ],
-      confirmLabel: outcome === "upheld" ? "Uphold decision" : "Reverse decision",
+const OUTCOMES: Record<AppealOutcome, { label: string; consequences: string[]; danger: boolean }> =
+  {
+    UPHELD: {
+      label: "Uphold decision",
       danger: false,
-      requireReason: { label: "Decision reason (shared with the member)" },
+      consequences: [
+        "The original enforcement stays in place.",
+        "The member receives your written reason.",
+      ],
+    },
+    OVERTURNED: {
+      label: "Overturn decision",
+      danger: true,
+      consequences: [
+        "The original enforcement is reversed by the backend.",
+        "The member receives your written reason.",
+      ],
+    },
+  };
+
+function useAppealActions(confirm: (spec: ConfirmSpec) => void, after: () => void) {
+  const dispatch = useAppDispatch();
+  const { run } = useApiAction();
+
+  const decide = (appeal: Appeal, outcome: AppealOutcome) => {
+    const spec = OUTCOMES[outcome];
+    confirm({
+      title: `${spec.label}: appeal ${shortId(appeal.id)}`,
+      description: `Against report ${shortId(appeal.reportId)}.`,
+      consequences: spec.consequences,
+      confirmLabel: spec.label,
+      danger: spec.danger,
+      requireReason: { label: "Formal reason (sent to the member)" },
       onConfirm: (reason) =>
-        run(dispatch(decideAppeal({ id: appeal.id, outcome, reason: reason ?? "" })).unwrap(), {
-          success: `${appeal.id} ${outcome}`,
-          audit: (updated) => ({
-            action: `appeal.${outcome === "upheld" ? "uphold" : "reverse"}`,
-            targetType: "appeal",
-            targetId: updated.id,
-            summary: `${outcome === "upheld" ? "Upheld" : "Reversed"} decision on ${updated.caseId} (appeal ${updated.id})`,
-            reason,
-          }),
+        run(dispatch(resolveAppeal({ id: appeal.id, outcome, reason: reason ?? "" })).unwrap(), {
+          success: `Appeal ${outcome === "UPHELD" ? "upheld" : "overturned"}`,
           after,
         }),
     });
+  };
+
+  const actionItems = (appeal: Appeal): RowActionItem[] =>
+    (Object.keys(OUTCOMES) as AppealOutcome[]).map((outcome) => ({
+      key: outcome,
+      label: OUTCOMES[outcome].label,
+      permission: "appeals:decide",
+      danger: OUTCOMES[outcome].danger,
+      disabled: !isAppealOpen(appeal),
+      disabledReason: "This appeal is already resolved.",
+      onSelect: () => decide(appeal, outcome),
+    }));
+
+  return { actionItems };
 }
 
 export function AppealsScreen() {
   const dispatch = useAppDispatch();
-  const { table, search, filterBar, refetch } = useDirectoryList(
+  const { table, filterBar, refetch } = useDirectoryList(
     appealsSelectors,
     fetchAppeals,
     appealsActions,
   );
   const [openId, setOpenId] = useOpenParam();
   const { confirm, dialog } = useConfirm();
-  const decide = useAppealDecision(confirm, () => {
+  const { actionItems } = useAppealActions(confirm, () => {
     refetch();
     if (openId) dispatch(fetchAppeal(openId));
   });
 
   const columns: TableColumnsType<Appeal> = [
     {
-      key: "id",
+      key: "appeal",
       title: "Appeal",
       render: (_, appeal) => (
         <Identity>
-          <strong>{appeal.id}</strong>
-          <span>@{appeal.username}</span>
+          <strong title={appeal.id}>{shortId(appeal.id)}</strong>
+          <Excerpt>{appeal.statement}</Excerpt>
         </Identity>
       ),
     },
     {
-      key: "original",
-      title: "Original decision",
+      key: "report",
+      title: "Original report",
+      render: (_, appeal) => (
+        <Link
+          href={`/admin/moderation/${appeal.reportId}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {shortId(appeal.reportId)}
+        </Link>
+      ),
+    },
+    {
+      key: "appellant",
+      title: "Appellant",
       render: (_, appeal) => (
         <Identity>
-          <strong>{MODERATION_ACTION_LABELS[appeal.originalDecision.action]}</strong>
-          <span>
-            <EntityLink kind="case" id={appeal.caseId} />
-          </span>
+          <strong>
+            <EntityLink kind="user" id={appeal.appellantUserId}>
+              {appeal.appellantName ?? shortId(appeal.appellantUserId)}
+            </EntityLink>
+          </strong>
+          <span>{appeal.appellantEmail ? maskEmail(appeal.appellantEmail) : "—"}</span>
         </Identity>
       ),
     },
@@ -148,15 +169,9 @@ export function AppealsScreen() {
       render: (_, appeal) => <StatusBadge {...APPEAL_STATUS[appeal.status]} />,
     },
     {
-      key: "reviewer",
-      title: "Reviewer",
-      render: (_, appeal) => appeal.assignedReviewerName ?? "Unassigned",
-    },
-    {
-      key: "submittedAt",
+      key: "submitted",
       title: "Submitted",
-      sorter: true,
-      render: (_, appeal) => formatDate(appeal.submittedAt),
+      render: (_, appeal) => formatDateTime(appeal.submittedAt),
     },
     {
       key: "actions",
@@ -164,27 +179,10 @@ export function AppealsScreen() {
       width: 56,
       render: (_, appeal) => (
         <RowActions
-          ariaLabel={`Actions for ${appeal.id}`}
+          ariaLabel={`Actions for appeal ${appeal.id}`}
           items={[
-            { key: "view", label: "Review appeal", onSelect: () => setOpenId(appeal.id) },
-            {
-              key: "uphold",
-              label: "Uphold decision",
-              icon: <CheckOutlined />,
-              permission: "appeals:decide",
-              disabled: isDecided(appeal),
-              disabledReason: "Already decided.",
-              onSelect: () => decide(appeal, "upheld"),
-            },
-            {
-              key: "reverse",
-              label: "Reverse decision",
-              icon: <RollbackOutlined />,
-              permission: "appeals:decide",
-              disabled: isDecided(appeal),
-              disabledReason: "Already decided.",
-              onSelect: () => decide(appeal, "reversed"),
-            },
+            { key: "view", label: "View appeal", onSelect: () => setOpenId(appeal.id) },
+            ...actionItems(appeal),
           ]}
         />
       ),
@@ -196,7 +194,16 @@ export function AppealsScreen() {
       <PageHeader
         eyebrow="Trust & Safety"
         title="Appeals"
-        subtitle="Members can appeal enforcement decisions. Review the original decision and evidence, then uphold or reverse it."
+        subtitle="Member appeals against enforcement decisions, from the TrenderAlert backend. Each decision needs a written reason."
+        actions={
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => refetch()}
+            loading={table.status === "loading"}
+          >
+            Refresh
+          </Button>
+        }
       />
       <DataTable<Appeal>
         ariaLabel="Appeals"
@@ -204,29 +211,18 @@ export function AppealsScreen() {
         rowKey="id"
         {...table}
         onRowClick={(appeal) => setOpenId(appeal.id)}
-        emptyTitle="No appeals match"
+        emptyTitle="No appeals"
+        emptyDescription="Appeals appear here when members challenge an enforcement decision."
         toolbar={
           <FilterBar<AppealFilters>
-            search={{
-              ...search,
-              ariaLabel: "Search appeals",
-              placeholder: "Search appeal, case or member",
-            }}
             filters={[
               { type: "select", key: "status", label: "Status", options: toOptions(APPEAL_STATUS) },
-              {
-                type: "select",
-                key: "action",
-                label: "Original decision",
-                width: 220,
-                options: ACTION_OPTIONS,
-              },
             ]}
             {...filterBar}
           />
         }
       />
-      <AppealDrawer id={openId} onClose={() => setOpenId(null)} decide={decide} />
+      <AppealDrawer id={openId} onClose={() => setOpenId(null)} actionItems={actionItems} />
       {dialog}
     </>
   );
@@ -235,139 +231,84 @@ export function AppealsScreen() {
 function AppealDrawer({
   id,
   onClose,
-  decide,
+  actionItems,
 }: {
   id: string | null;
   onClose: () => void;
-  decide: (appeal: Appeal, outcome: "upheld" | "reversed") => void;
+  actionItems: (appeal: Appeal) => RowActionItem[];
 }) {
   const dispatch = useAppDispatch();
   const appeal = useAppSelector((state) => appealsSelectors.selectById(state, id));
   const detail = useAppSelector(appealsSelectors.selectDetail);
-  const context = useAppSelector(appealsSelectors.selectContext);
 
   useEffect(() => {
-    if (!id) return;
-    dispatch(fetchAppeal(id));
-    dispatch(fetchAppealCase(id));
+    if (id) dispatch(fetchAppeal(id));
   }, [dispatch, id]);
-
-  const original = context.id === id ? context.data : null;
-  const decided = appeal ? isDecided(appeal) : true;
 
   return (
     <DetailDrawer
       open={Boolean(id)}
       onClose={onClose}
       width={600}
-      title={id ?? ""}
-      subtitle={appeal ? `@${appeal.username} · Demo record` : undefined}
+      title={id ? `Appeal ${shortId(id)}` : ""}
+      subtitle={appeal ? `Submitted ${formatDateTime(appeal.submittedAt)}` : undefined}
       status={appeal ? <StatusBadge {...APPEAL_STATUS[appeal.status]} /> : null}
       loadStatus={appeal ? "succeeded" : detail.id === id ? detail.status : "loading"}
       error={detail.error}
       onRetry={() => id && dispatch(fetchAppeal(id))}
-      actions={
-        appeal ? (
-          <Can permission="appeals:decide">
-            <DrawerActions>
-              <Tooltip title={decided ? "Already decided." : undefined}>
-                <Button
-                  icon={<CheckOutlined />}
-                  disabled={decided}
-                  onClick={() => decide(appeal, "upheld")}
-                >
-                  Uphold decision
-                </Button>
-              </Tooltip>
-              <Tooltip title={decided ? "Already decided." : undefined}>
-                <Button
-                  type="primary"
-                  icon={<RollbackOutlined />}
-                  disabled={decided}
-                  onClick={() => decide(appeal, "reversed")}
-                >
-                  Reverse decision
-                </Button>
-              </Tooltip>
-            </DrawerActions>
-          </Can>
-        ) : null
-      }
+      actions={appeal ? <ActionButtons items={actionItems(appeal)} /> : null}
     >
       {appeal ? (
         <>
-          <DetailSection title="Original decision">
+          <DetailSection title="Appeal statement">
+            <Statement>{appeal.statement}</Statement>
+          </DetailSection>
+          <DetailSection title="Details">
             <DetailList
               items={[
                 {
-                  key: "action",
-                  label: "Action",
-                  value: MODERATION_ACTION_LABELS[appeal.originalDecision.action],
-                },
-                {
-                  key: "case",
-                  label: "Case",
-                  value: <EntityLink kind="case" id={appeal.caseId} />,
-                },
-                { key: "by", label: "Decided by", value: appeal.originalDecision.decidedBy },
-                {
-                  key: "at",
-                  label: "Decided",
-                  value: formatDateTime(appeal.originalDecision.decidedAt),
-                },
-                {
-                  key: "reason",
-                  label: "Reason",
-                  value: appeal.originalDecision.reason,
+                  key: "report",
+                  label: "Original report",
+                  value: (
+                    <Link href={`/admin/moderation/${appeal.reportId}`}>{appeal.reportId}</Link>
+                  ),
                   wide: true,
                 },
                 {
-                  key: "caseStatus",
-                  label: "Case status",
-                  value: original ? <StatusBadge {...CASE_STATUS[original.status]} /> : "…",
-                },
-                {
-                  key: "member",
-                  label: "Member",
+                  key: "appellant",
+                  label: "Appellant",
                   value: (
-                    <EntityLink kind="user" id={appeal.userId}>
-                      @{appeal.username}
+                    <EntityLink kind="user" id={appeal.appellantUserId}>
+                      {appeal.appellantName ?? appeal.appellantUserId}
                     </EntityLink>
                   ),
+                  wide: true,
                 },
-              ]}
-            />
-          </DetailSection>
-          <DetailSection title="Appeal">
-            <DetailList
-              items={[
-                { key: "reason", label: "Member's reason", value: appeal.appealReason, wide: true },
-                { key: "submitted", label: "Submitted", value: formatDateTime(appeal.submittedAt) },
                 {
-                  key: "reviewer",
-                  label: "Reviewer",
-                  value: appeal.assignedReviewerName ?? "Unassigned",
+                  key: "assigned",
+                  label: "Assigned to",
+                  value: appeal.assignedAdminId ?? "Unassigned",
                 },
+                { key: "resolved", label: "Resolved", value: formatDateTime(appeal.resolvedAt) },
               ]}
             />
           </DetailSection>
           <DetailSection title="Evidence">
-            {appeal.evidence.length ? (
+            {appeal.evidenceAssets.length > 0 ? (
               <Evidence>
-                {appeal.evidence.map((item) => (
-                  <li key={item.id}>
-                    <strong>{item.label}</strong>
-                    <span>{item.summary}</span>
-                  </li>
+                {appeal.evidenceAssets.map((asset) => (
+                  <li key={asset}>{asset}</li>
                 ))}
               </Evidence>
             ) : (
-              <EmptyState compact title="No evidence submitted" />
+              <EmptyState compact title="No evidence attached" />
             )}
           </DetailSection>
-          <DetailSection title="Decision history">
-            <Timeline entries={appeal.history} />
-          </DetailSection>
+          {appeal.resolutionReason ? (
+            <DetailSection title="Resolution">
+              <Statement>{appeal.resolutionReason}</Statement>
+            </DetailSection>
+          ) : null}
         </>
       ) : null}
     </DetailDrawer>
