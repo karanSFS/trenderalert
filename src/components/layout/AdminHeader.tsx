@@ -1,26 +1,23 @@
 "use client";
 
 import {
-  CheckOutlined,
   GlobalOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
-  SwapOutlined,
 } from "@ant-design/icons";
-import { App, Button, Dropdown, Tag, type MenuProps } from "antd";
+import { Button, Dropdown, Tag, type MenuProps } from "antd";
 import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
-import { signOut, switchDemoRole } from "@/features/auth/authSlice";
+import { signOut } from "@/features/auth/authSlice";
 import { selectAuth } from "@/features/auth/authSelectors";
 import { selectSidebarCollapsed, toggleSidebar } from "@/features/settings/layoutSlice";
 import { ADMIN_LOGIN_PATH } from "@/lib/constants/app";
-import { ADMIN_ROLES, ROLE_LABELS } from "@/lib/constants/roles";
+import { ROLE_LABELS } from "@/lib/constants/roles";
 import { getInitials } from "@/lib/formatters/text";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import type { AdminRole } from "@/types/auth";
 import { AdminBreadcrumbs } from "./AdminBreadcrumbs";
 import { NotificationBell } from "./NotificationBell";
 
@@ -139,19 +136,6 @@ const MenuHeading = styled.div`
   }
 `;
 
-const GroupLabel = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-`;
-
-const IconSpacer = styled.span`
-  display: inline-block;
-  width: 14px;
-`;
-
 interface AdminHeaderProps {
   onOpenMobileNav: () => void;
 }
@@ -159,22 +143,11 @@ interface AdminHeaderProps {
 export function AdminHeader({ onOpenMobileNav }: AdminHeaderProps) {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { message } = App.useApp();
-  const { currentAdmin, roleSwitchStatus } = useAppSelector(selectAuth);
+  const { currentAdmin, signOutStatus } = useAppSelector(selectAuth);
   const collapsed = useAppSelector(selectSidebarCollapsed);
 
-  const handleRoleSwitch = async (role: AdminRole) => {
-    if (role === currentAdmin?.role) return;
-    try {
-      const account = await dispatch(switchDemoRole(role)).unwrap();
-      message.success(`Now viewing the demo as ${account.displayName} (${ROLE_LABELS[role]}).`);
-    } catch {
-      message.error("Could not switch demo role. Try again.");
-    }
-  };
-
-  const handleSignOut = () => {
-    dispatch(signOut());
+  const handleSignOut = async () => {
+    await dispatch(signOut());
     router.replace(ADMIN_LOGIN_PATH);
   };
 
@@ -192,21 +165,13 @@ export function AdminHeader({ onOpenMobileNav }: AdminHeaderProps) {
         },
         { type: "divider" },
         {
-          key: "switch-role",
-          type: "group",
+          key: "role",
+          disabled: true,
           label: (
-            <GroupLabel>
-              <SwapOutlined aria-hidden="true" /> Switch demo role
-            </GroupLabel>
+            <MenuHeading>
+              <span>Role: {ROLE_LABELS[currentAdmin.role]}</span>
+            </MenuHeading>
           ),
-          children: ADMIN_ROLES.map((role) => ({
-            key: `role:${role}`,
-            label: ROLE_LABELS[role],
-            disabled: roleSwitchStatus === "loading",
-            icon:
-              role === currentAdmin.role ? <CheckOutlined /> : <IconSpacer aria-hidden="true" />,
-            onClick: () => handleRoleSwitch(role),
-          })),
         },
         { type: "divider" },
         {
@@ -219,9 +184,10 @@ export function AdminHeader({ onOpenMobileNav }: AdminHeaderProps) {
         {
           key: "sign-out",
           icon: <LogoutOutlined />,
-          label: "Sign out of demo",
+          label: signOutStatus === "loading" ? "Signing out…" : "Sign out",
           danger: true,
-          onClick: handleSignOut,
+          disabled: signOutStatus === "loading",
+          onClick: () => void handleSignOut(),
         },
       ]
     : [];

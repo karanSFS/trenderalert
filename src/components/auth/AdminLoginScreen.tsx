@@ -1,20 +1,23 @@
 "use client";
 
-import { ArrowRightOutlined, CheckCircleFilled } from "@ant-design/icons";
-import { Alert, Button, Skeleton } from "antd";
+import {
+  ArrowRightOutlined,
+  CheckCircleFilled,
+  LockOutlined,
+  MailOutlined,
+} from "@ant-design/icons";
+import { Alert, Button, Form, Input } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import styled from "styled-components";
 import { BrandLogo } from "@/components/ui/BrandLogo";
-import { ErrorState } from "@/components/ui/ErrorState";
 import { ThemeSwitcher } from "@/components/ui/ThemeSwitcher";
-import { clearSignInError, fetchDemoAccounts, signInDemo } from "@/features/auth/authSlice";
+import { clearSignInError, signIn } from "@/features/auth/authSlice";
 import { selectAuth } from "@/features/auth/authSelectors";
 import { ADMIN_HOME_PATH } from "@/lib/constants/app";
-import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/constants/roles";
-import { getInitials } from "@/lib/formatters/text";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import type { SignInCredentials } from "@/types/auth";
 
 const Page = styled.div`
   display: grid;
@@ -114,69 +117,6 @@ const Lead = styled.p`
   color: ${({ theme }) => theme.colors.textSecondary};
 `;
 
-const AccountList = styled.div`
-  display: grid;
-  gap: ${({ theme }) => theme.space(3)};
-  margin-bottom: ${({ theme }) => theme.space(6)};
-`;
-
-const AccountOption = styled.button<{ $selected: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.space(4)};
-  width: 100%;
-  padding: ${({ theme }) => theme.space(4)};
-  text-align: left;
-  font: inherit;
-  color: ${({ theme }) => theme.colors.textPrimary};
-  cursor: pointer;
-  background: ${({ $selected, theme }) => ($selected ? theme.colors.primarySoft : theme.colors.surface)};
-  border: 1px solid
-    ${({ $selected, theme }) => ($selected ? theme.colors.primary : theme.colors.border)};
-  border-radius: ${({ theme }) => theme.radii.card};
-  box-shadow: ${({ $selected, theme }) => ($selected ? `inset 0 0 0 1px ${theme.colors.primary}` : "none")};
-  transition:
-    border-color var(--ta-transition-fast),
-    background-color var(--ta-transition-fast);
-
-  &:hover {
-    border-color: ${({ $selected, theme }) => ($selected ? theme.colors.primary : theme.colors.borderStrong)};
-  }
-`;
-
-const Avatar = styled.span`
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.onPrimary};
-  background: ${({ theme }) => theme.colors.primary};
-`;
-
-const AccountText = styled.span`
-  flex: 1;
-  min-width: 0;
-  line-height: 1.4;
-
-  strong {
-    display: block;
-  }
-
-  small {
-    display: block;
-    color: ${({ theme }) => theme.colors.textSecondary};
-  }
-`;
-
-const Check = styled(CheckCircleFilled)<{ $visible: boolean }>`
-  font-size: 18px;
-  color: ${({ theme }) => theme.colors.textPrimary};
-  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-`;
-
 const ErrorAlert = styled(Alert)`
   margin-bottom: ${({ theme }) => theme.space(4)};
 `;
@@ -203,30 +143,16 @@ export function AdminLoginScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = safeNextPath(searchParams.get("next"));
-  const {
-    currentAdmin,
-    sessionRestored,
-    demoAccounts,
-    demoAccountsStatus,
-    demoAccountsError,
-    signInStatus,
-    signInError,
-  } = useAppSelector(selectAuth);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const effectiveSelectedId = selectedId ?? demoAccounts[0]?.id ?? null;
-
-  useEffect(() => {
-    if (demoAccountsStatus === "idle") dispatch(fetchDemoAccounts());
-  }, [demoAccountsStatus, dispatch]);
+  const { currentAdmin, sessionRestored, sessionError, signInStatus, signInError } =
+    useAppSelector(selectAuth);
+  const submitting = signInStatus === "loading";
 
   useEffect(() => {
     if (sessionRestored && currentAdmin) router.replace(nextPath);
   }, [sessionRestored, currentAdmin, nextPath, router]);
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!effectiveSelectedId) return;
-    dispatch(signInDemo(effectiveSelectedId));
+  const handleFinish = (values: SignInCredentials) => {
+    dispatch(signIn({ email: values.email.trim(), password: values.password }));
   };
 
   return (
@@ -234,27 +160,27 @@ export function AdminLoginScreen() {
       <BrandPanel>
         <BrandLogo tone="onDark" size="lg" />
         <div>
-          <h2>Administration portal demo</h2>
+          <h2>Administration portal</h2>
           <p>
-            Explore how TrenderAlert staff will manage trends, safety, contests, support and
-            finance. Choose a role to see exactly what that role can access.
+            Manage trends, safety, contests, support and finance. Your access is set by the role
+            assigned to your administrator account.
           </p>
           <NoteList>
             <li>
               <CheckCircleFilled aria-hidden="true" />
-              <span>Every record is fictional sample data.</span>
+              <span>Sign in with the account issued to you by a Super Administrator.</span>
             </li>
             <li>
               <CheckCircleFilled aria-hidden="true" />
-              <span>Actions update the demo only. Nothing reaches a real account or payment.</span>
+              <span>Navigation and actions are limited to your role.</span>
             </li>
             <li>
               <CheckCircleFilled aria-hidden="true" />
-              <span>You can switch roles at any time from the profile menu.</span>
+              <span>Module screens still show demo data until their APIs are connected.</span>
             </li>
           </NoteList>
         </div>
-        <small>Demo environment. Not production authentication.</small>
+        <small>Sessions are held in secure, httpOnly cookies.</small>
       </BrandPanel>
 
       <FormColumn>
@@ -269,82 +195,76 @@ export function AdminLoginScreen() {
         </TopBar>
 
         <FormCard aria-labelledby="login-title">
-          <h1 id="login-title">Sign in to the demo</h1>
-          <Lead>Select a demo administrator. No password is needed in demo mode.</Lead>
+          <h1 id="login-title">Sign in</h1>
+          <Lead>Use your administrator email and password.</Lead>
 
-          {demoAccountsStatus === "failed" ? (
-            <ErrorState
-              compact
-              title="Demo accounts could not be loaded"
-              message={demoAccountsError?.message}
-              onRetry={() => dispatch(fetchDemoAccounts())}
+          {sessionError && !signInError ? (
+            <ErrorAlert
+              type="warning"
+              showIcon
+              title="Your previous session could not be checked"
+              description={sessionError.message}
             />
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <AccountList
-                role="radiogroup"
-                aria-label="Demo accounts"
-                aria-busy={demoAccountsStatus !== "succeeded"}
-              >
-                {demoAccountsStatus !== "succeeded"
-                  ? Array.from({ length: 5 }, (_, index) => (
-                      <Skeleton
-                        key={index}
-                        active
-                        avatar
-                        paragraph={{ rows: 1 }}
-                        title={{ width: "40%" }}
-                      />
-                    ))
-                  : demoAccounts.map((account) => {
-                      const selected = account.id === effectiveSelectedId;
-                      return (
-                        <AccountOption
-                          key={account.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          $selected={selected}
-                          onClick={() => {
-                            setSelectedId(account.id);
-                            dispatch(clearSignInError());
-                          }}
-                        >
-                          <Avatar aria-hidden="true">{getInitials(account.displayName)}</Avatar>
-                          <AccountText>
-                            <strong>
-                              {ROLE_LABELS[account.role]} · {account.displayName}
-                            </strong>
-                            <small>{ROLE_DESCRIPTIONS[account.role]}</small>
-                          </AccountText>
-                          <Check aria-hidden="true" $visible={selected} />
-                        </AccountOption>
-                      );
-                    })}
-              </AccountList>
+          ) : null}
 
-              {signInError ? (
-                <ErrorAlert type="error" showIcon title={signInError.message} />
-              ) : null}
-
-              <Button
-                type="primary"
-                htmlType="submit"
+          <Form<SignInCredentials>
+            layout="vertical"
+            requiredMark={false}
+            disabled={submitting}
+            onFinish={handleFinish}
+            onValuesChange={() => {
+              if (signInError) dispatch(clearSignInError());
+            }}
+          >
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: "Enter your email address." },
+                { type: "email", message: "Enter a valid email address." },
+              ]}
+            >
+              <Input
                 size="large"
-                block
-                icon={<ArrowRightOutlined />}
-                iconPlacement="end"
-                loading={signInStatus === "loading"}
-                disabled={!effectiveSelectedId || demoAccountsStatus !== "succeeded"}
-              >
-                Enter demo portal
-              </Button>
-            </form>
-          )}
+                prefix={<MailOutlined aria-hidden="true" />}
+                autoComplete="username"
+                inputMode="email"
+                placeholder="name@trenderalert.com"
+                autoFocus
+              />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label="Password"
+              rules={[{ required: true, message: "Enter your password." }]}
+            >
+              <Input.Password
+                size="large"
+                prefix={<LockOutlined aria-hidden="true" />}
+                autoComplete="current-password"
+              />
+            </Form.Item>
+
+            {signInError ? (
+              <ErrorAlert type="error" showIcon title={signInError.message} role="alert" />
+            ) : null}
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              block
+              icon={<ArrowRightOutlined />}
+              iconPlacement="end"
+              loading={submitting}
+            >
+              Sign in
+            </Button>
+          </Form>
 
           <Disclaimer>
-            Demo sign-in only. Production access will require backend authentication with strong
-            credentials and server-side authorization for every action.
+            Access is checked by the TrenderAlert backend on every request. Signing in here does not
+            grant permissions the backend has not assigned to your account.
           </Disclaimer>
         </FormCard>
       </FormColumn>

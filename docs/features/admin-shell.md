@@ -1,8 +1,8 @@
-# Admin Shell and Demo Authentication
+# Admin Shell and Authentication
 
 ### 1. Overview
 
-The shared frame for every admin page: sidebar navigation, header, breadcrumbs, demo banner, theme controls, profile menu, and the demo sign-in that decides which role is active. It lets the project manager explore the portal as any of the five administrative roles.
+The shared frame for every admin page: sidebar navigation, header, breadcrumbs, demo banner, theme controls, profile menu, and the backend sign-in that decides which role is active.
 
 ### 2. Requirements
 
@@ -12,15 +12,15 @@ The shared frame for every admin page: sidebar navigation, header, breadcrumbs, 
 
 ### 3. Routes and screens
 
-- `/admin/login`: demo sign-in.
+- `/admin/login`: email and password sign-in against the backend.
 - `/admin` redirects to `/admin/dashboard`.
 - Every `/admin/*` route inside `src/app/admin/(portal)/` uses the shell.
 - Dialog-like surfaces: theme popover, profile dropdown, mobile navigation drawer.
 
 ### 4. User interactions
 
-- Choose a demo account and enter the portal. On failure an error message shows and the user can retry.
-- Switch role from the profile menu. Navigation and access update, and a success message confirms the change.
+- Enter email and password. Wrong credentials, inactive accounts and non-admin accounts show an inline error.
+- The profile menu shows the signed-in role. To use another role, sign out and sign in with that account.
 - Sign out. The session clears and the sign-in page shows.
 - Collapse or expand the sidebar (desktop). The state persists.
 - Open the navigation drawer (below 992px).
@@ -34,7 +34,7 @@ The shared frame for every admin page: sidebar navigation, header, breadcrumbs, 
 ### 6. Redux state
 
 - `auth` slice: `currentAdmin`, `sessionRestored`, `signInStatus` and `signInError`, `roleSwitchStatus`, `demoAccounts` with `demoAccountsStatus` and `demoAccountsError`.
-- Thunks: `fetchDemoAccounts`, `signInDemo`, `switchDemoRole`, `restoreDemoSession`. Reducers: `signOut`, `clearSignInError`.
+- Thunks: `signIn`, `restoreSession`, `signOut`. Reducer: `clearSignInError`.
 - Selectors: `selectAuth`, `selectCurrentAdmin`, `selectCurrentRole`, `selectIsAuthenticated`, `selectSessionRestored`, `selectHasPermission`.
 - `layout` slice: `sidebarCollapsed` (`toggleSidebar`, `setSidebarCollapsed`).
 
@@ -53,13 +53,12 @@ The shared frame for every admin page: sidebar navigation, header, breadcrumbs, 
 
 ### 9. Service layer
 
-`AuthService` contract (`services/contracts/authService.ts`) implemented by `mockAuthService`: `listDemoAccounts`, `signInDemo`, `getDemoAccountForRole`, `restoreDemoSession`.
+`AuthService` contract (`services/contracts/authService.ts`) implemented by `apiAuthService`: `signIn`, `getSession`, `signOut`, backed by the `/api/auth/*` route handlers (see AUTHENTICATION_AND_ROLES.md).
 
 ### 10. Loading and error handling
 
 - Sign-in: account skeletons while loading; `ErrorState` with retry if accounts fail; inline error alert if sign-in fails; button loading state.
 - Shell: `AdminShellSkeleton` until the saved session is checked; `loading.tsx` page skeleton between routes; `error.tsx` with retry.
-- Role switch: success or error message.
 
 ### 11. Permissions
 
@@ -82,12 +81,12 @@ Manual steps in [TESTING.md](../TESTING.md) (sign-in, role permissions, navigati
 ### 15. Backend integration requirements
 
 - Real admin authentication with MFA and server-issued sessions (proposed; scheme not defined).
-- An endpoint returning the current admin and role, used instead of `restoreDemoSession` (proposed).
+- Return the caller's role from `/auth/login` and `/auth/me` (currently inferred from `/admin/roles`).
 - Server-side authorization for every admin request.
-- Remove `listDemoAccounts`, `getDemoAccountForRole` and the role switcher in production.
+- Add an MFA step when the backend exposes one.
 
 ### 16. Known limitations
 
-- Demo sign-in has no credentials; role checks are UI only.
+- Module role checks are UI only while modules use mock data.
 - Notifications indicator and global search are not included yet; they will be added with the dashboard and modules if supported by demo data.
 - The logo is a placeholder.

@@ -8,15 +8,15 @@ This frontend is a demonstration running on fictional local data. It has **no** 
 
 - Mock data contains only fictional people. Demo emails use the reserved `.test` domain.
 - No passwords, tokens, payment credentials or secrets are stored in code, mock data or `localStorage`.
-- `localStorage` holds only the theme preference, sidebar state and the selected demo account id.
+- `localStorage` holds only the theme preference and sidebar state. Backend access and refresh tokens are kept in `HttpOnly`, `SameSite=Lax` cookies (`Secure` in production) set by the `/api/auth/*` route handlers, so scripts cannot read them.
 - Support screens show masked contact details only (for example `ar*****@members.demo.test`) and a notice that passwords, payment details and precise locations are never shown, matching the specification's Support Agent definition. Masking must also be enforced by the backend.
 - Subscription and transaction screens show opaque store references, never payment credentials.
 - Administrator records show MFA status only; there are no MFA secrets.
 
-## Demo authentication limitations
+## Authentication limitations
 
-- Anyone can sign in as any role, and can edit `localStorage` to impersonate another account.
-- Role checks only hide navigation and screens. They do not protect data.
+- Sign-in uses the backend, but every admin module still runs on local mock data, so module role checks only hide navigation and actions. They do not protect data.
+- The role is inferred from the backend's `/admin/roles` response (or its 403 message) until the backend returns it directly.
 - See [AUTHENTICATION_AND_ROLES.md](AUTHENTICATION_AND_ROLES.md).
 
 ## Backend authorization requirements
@@ -52,4 +52,5 @@ The specification (CAP14-001) lists designated administrative screens among surf
 - Server-side authorization and audit logging.
 - Content Security Policy and security headers.
 - Rate limiting and abuse protection on admin APIs.
-- Removal of the demo sign-in and demo role switcher.
+- MFA at sign-in once the backend supports it.
+- A backend field for the caller's own role (the role is currently inferred; see AUTHENTICATION_AND_ROLES.md).

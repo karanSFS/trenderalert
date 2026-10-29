@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-10-29 — Backend authentication
+
+**Feature:** The admin sign-in now uses the TrenderAlert backend (`POST /api/v1/auth/login`) for all five roles. The demo account picker and the role switcher are removed.
+
+**Main files affected**
+
+- Server: `src/server/{backendAuth,sessionCookies,routeErrors}.ts`; route handlers `src/app/api/auth/{login,session,logout}/route.ts`.
+- Client: `services/api/authService.ts` (replaces the mock auth service), `services/contracts/authService.ts`, `features/auth/{authSlice,authTypes}.ts`, `providers/StoreProvider.tsx`, `store/persistence.ts`, `lib/constants/app.ts`, `types/auth.ts` (`AdminIdentity`, `SignInCredentials`).
+- UI: `AdminLoginScreen` (email and password form), `AdminHeader` (role shown, real sign-out).
+- Config: `.env.example` documents `TRENDERALERT_API_URL` (server-only). Added the `server-only` package.
+
+**Behavior**
+
+- Tokens are stored in httpOnly cookies set by the route handlers; the browser never sees them. Sessions survive a reload and the access token is refreshed automatically.
+- Sign-in is refused for wrong credentials, inactive accounts and accounts without an administrator role.
+- The role is resolved from the backend. Because the login response does not include it, the frontend reads `/api/v1/admin/roles` (Super Admin) or the role named in that endpoint's 403 response. The backend has been asked to return the role directly.
+- The old `ta.demoSession` key is removed from `localStorage` on load.
+
+**Verified**
+
+- All five backend accounts sign in with the correct role; session, refresh and logout work through the route handlers; wrong password and invalid email show errors.
+- Browser: wrong password error, Content Moderator sign-in with role-limited navigation, reload keeps the session, sign-out and redirect to sign-in. Auth cookies are not readable from page scripts.
+- `lint`, `typecheck`, `format:check` and `build`.
+
+**Known limitations**
+
+- No MFA step (the backend does not request one at login yet).
+- Admin modules still use mock data. The Admin users screen's "you" and self-protection compare against demo ids, so they do not match the real signed-in account.
+
 ## 2026-10-28 — Phase 6: Operational administration
 
 **Feature:** Contests, Subscriptions, Finance (overview, transactions, reconciliation), Support, Discovery, Configuration and feature flags, Admin users, Audit logs and Operations. Every registered admin route now has a real page.

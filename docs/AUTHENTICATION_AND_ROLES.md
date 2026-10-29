@@ -1,28 +1,51 @@
 # Authentication and Roles
 
-## Demo authentication
+## Backend authentication
 
-The portal uses a demo sign-in at `/admin/login`. There are no passwords. The user picks one of the demo administrators below and enters the portal. The session (only the account id) is stored in `localStorage["ta.demoSession"]` so a refresh keeps the user signed in.
+Administrators sign in at `/admin/login` with the email and password issued by the backend team. Credentials are never stored in the frontend code or in `localStorage`.
 
-**This is not authentication.** Anyone can open any role. It exists only to demonstrate role-based navigation.
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant N as Next.js route handlers
+  participant API as TrenderAlert backend
+  B->>N: POST /api/auth/login {email, password}
+  N->>API: POST /api/v1/auth/login
+  API-->>N: access_token, refresh_token, user
+  N->>API: resolve role (see below)
+  N-->>B: {admin} + httpOnly cookies ta_access, ta_refresh
+  B->>N: GET /api/auth/session (on every page load)
+  N->>API: refresh if needed, GET /api/v1/auth/me
+  N-->>B: {admin} or {admin: null}
+  B->>N: POST /api/auth/logout
+  N->>API: POST /api/v1/auth/logout (revokes the refresh session)
+```
 
-## Demo accounts
+- **Route handlers** (`src/app/api/auth/{login,session,logout}/route.ts`) are the only code that talks to the backend auth API. They use `src/server/backendAuth.ts`, which reads `TRENDERALERT_API_URL` (server-only environment variable).
+- **Tokens** live in `ta_access` (expires with the JWT, 60 minutes) and `ta_refresh` (30 days) cookies: `HttpOnly`, `SameSite=Lax`, `Secure` in production. Browser JavaScript cannot read them, and Redux only holds the admin identity (`id`, `displayName`, `email`, `username`, `role`).
+- **Session restore:** `StoreProvider` dispatches `restoreSession()` on load. The session route refreshes the access token when it is missing or within a minute of expiry, then validates it with `GET /api/v1/auth/me`.
+- **Rejected sign-ins:** wrong credentials (401, "Incorrect email or password."), accounts that are not `ACTIVE`, and users without an administrator role. For the last two the new backend session is revoked immediately.
 
-All accounts are fictional. The `.test` domain is reserved and cannot receive email. Source: `src/data/mock/adminUsers.ts`.
+### How the role is resolved
 
-| Account id | Name            | Role                  | Email                                  |
-| ---------- | --------------- | --------------------- | -------------------------------------- |
-| `adm-001`  | Avery Collins   | Super Administrator   | avery.collins@demo.trenderalert.test   |
-| `adm-002`  | Jordan Reyes    | Content Moderator     | jordan.reyes@demo.trenderalert.test    |
-| `adm-003`  | Priya Natarajan | Support Agent         | priya.natarajan@demo.trenderalert.test |
-| `adm-004`  | Marcus Bell     | Finance Administrator | marcus.bell@demo.trenderalert.test     |
-| `adm-005`  | Sofia Laurent   | Contest Administrator | sofia.laurent@demo.trenderalert.test   |
+The backend's login response, JWT and `/auth/me` do not include the administrator role. `resolveAdminRole` therefore checks, in order:
 
-## Exploring roles
+1. `user.role` or `user.admin_role` (preferred; not returned by the backend yet);
+2. a `role` claim in the access token (not issued yet);
+3. `GET /api/v1/admin/roles`, which lists every assignment but is only allowed for Super Admins;
+4. for other roles, the role named in that endpoint's 403 message ("Role 'SUPPORT_AGENT' does not have permission…").
 
-- On the sign-in page, choose an account and select **Enter demo portal**.
-- Inside the portal, open the profile menu (top right) and choose a role under **Switch demo role**. The sidebar and route access update immediately.
-- **Sign out of demo** clears the session and returns to the sign-in page.
+Step 4 is an interim workaround. **Backend request:** return the caller's role (for example `user.role`) from `/auth/login` and `/auth/me`; steps 1 and 2 will then pick it up with no frontend change.
+
+Backend role names map to frontend roles as follows: `SUPER_ADMIN` → `super_admin`, `CONTENT_MODERATOR` → `content_moderator`, `SUPPORT_AGENT` → `support_agent`, `FINANCE_ADMIN` → `finance_admin`, `CONTEST_ADMIN` → `contest_admin`.
+
+### MFA
+
+The backend marks every admin account `mfa_enabled`, but `/auth/login` does not ask for a second factor yet. The sign-in screen does not imitate one; add the step when the backend exposes it.
+
+### Exploring roles
+
+Sign in with each administrator account supplied by the backend team (ask them for credentials; they are not kept in this repository). To change role, sign out and sign in with another account. The demo role switcher has been removed.
 
 ## Roles
 
@@ -98,14 +121,14 @@ Phase 6 action permissions:
 
 ## Administrator accounts (Phase 6)
 
-The Admin users screen lists the five demo sign-in accounts plus fictional colleagues, with role, status and MFA status. Rules shown in the demo and expected from the backend:
+The Admin users screen lists fictional demo administrators, with role, status and MFA status. Rules shown in the demo and expected from the backend:
 
 - Administrators cannot change their own role or deactivate themselves.
 - At least one active Super Administrator must remain.
 - Invitations record an invited account only; no email is sent, and demo invites must use the fictional `@demo.trenderalert.test` domain.
 - MFA is displayed as a status. No passwords, tokens or MFA secrets exist anywhere in the frontend.
 
-Changing a role here does not change what the demo sign-in accounts can do; the role switcher still controls the current demo session.
+Changing a role on this screen only changes demo data. Real role assignments are made in the backend (`POST /api/v1/admin/roles/assign`, not connected yet).
 
 ## Production authentication requirements
 

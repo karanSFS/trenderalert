@@ -28,7 +28,7 @@ src/
   app/                 Routes (public route group, admin, not-found, error)
   components/
     admin/             Admin-only screens (admin 404)
-    auth/              Demo sign-in screen
+    auth/              Sign-in screen
     layout/            Admin shell: layout, sidebar, header, breadcrumbs
     promotional/       Public header, footer and landing-page sections
     ui/                Shared UI: PageHeader, StatusBadge, states, skeletons, theme switcher
@@ -52,7 +52,7 @@ See [ROUTING.md](ROUTING.md). In short: `/`, `/privacy`, `/terms`, `/support`, `
 ## Current demo limitations
 
 - No backend. All data is fictional and served by the mock service layer with simulated latency.
-- Demo sign-in has no passwords. Role checks are UI-only and provide no security.
+- Sign-in uses the backend API (tokens in httpOnly cookies). Admin modules still use mock data, so their role checks are UI-only.
 - The TrenderAlert logo is a **placeholder wordmark** until the owner supplies the original artwork.
 - Legal, privacy and support page copy are placeholders awaiting approved text.
 - Phases 1 to 6 are complete: foundation, public website, shared admin components, dashboard, core administration and operational administration. Every registered admin route has a real page.

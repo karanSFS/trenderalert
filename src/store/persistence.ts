@@ -1,6 +1,4 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
-import { signInDemo, signOut, switchDemoRole } from "@/features/auth/authSlice";
-import type { DemoSessionSnapshot } from "@/features/auth/authTypes";
 import { setSidebarCollapsed, toggleSidebar } from "@/features/settings/layoutSlice";
 import {
   resetTheme,
@@ -32,6 +30,11 @@ export function readJson<T>(key: string): T | null {
   }
 }
 
+/** Removes keys written by earlier versions, such as the old demo session id. */
+export function removeLegacyKeys(keys: readonly string[]) {
+  for (const key of keys) writeJson(key, null);
+}
+
 export const persistenceMiddleware = createListenerMiddleware();
 
 persistenceMiddleware.startListening({
@@ -46,16 +49,5 @@ persistenceMiddleware.startListening({
   matcher: isAnyOf(setSidebarCollapsed, toggleSidebar),
   effect: (_, api) => {
     writeJson(STORAGE_KEYS.layout, (api.getState() as PersistedRootState).layout);
-  },
-});
-
-persistenceMiddleware.startListening({
-  matcher: isAnyOf(signInDemo.fulfilled, switchDemoRole.fulfilled, signOut),
-  effect: (_, api) => {
-    const admin = (api.getState() as PersistedRootState).auth.currentAdmin;
-    writeJson(
-      STORAGE_KEYS.demoSession,
-      admin ? ({ accountId: admin.id } satisfies DemoSessionSnapshot) : null,
-    );
   },
 });

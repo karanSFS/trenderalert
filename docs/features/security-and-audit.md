@@ -37,7 +37,7 @@ Prompt section 13 (admin users, audit logs). Specification ADMIN-001 (named acco
 
 ### 8. Mock data
 
-`data/mock/adminDirectory.ts`: the five demo sign-in accounts plus six colleagues (one invited, one deactivated, one without MFA). The audit log reads `db.auditHistory`, which includes seeded history and every demo action recorded this session.
+`data/mock/adminDirectory.ts`: five demo administrators (one per role) plus six colleagues (one invited, one deactivated, one without MFA). The audit log reads `db.auditHistory`, which includes seeded history and every demo action recorded this session.
 
 ### 9. Service layer
 

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { AdminLoginScreen } from "@/components/auth/AdminLoginScreen";
 
 export const metadata: Metadata = {
-  title: "Demo sign-in",
+  title: "Sign in",
 };
 
 export default function AdminLoginPage() {

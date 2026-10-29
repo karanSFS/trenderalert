@@ -100,5 +100,5 @@ Always include text. Color reinforces meaning but never carries it alone.
 - Visible focus outlines (`focusRing` token).
 - Text contrast meets WCAG AA. Yellow is never used for text on light surfaces.
 - Loading regions use `aria-busy` with a visually hidden label. Error states use `role="alert"`.
-- Custom radio-style pickers (theme presets, demo accounts) use `role="radio"` and `aria-checked`.
+- Custom radio-style pickers (theme presets) use `role="radio"` and `aria-checked`.
 - `prefers-reduced-motion` disables transitions.

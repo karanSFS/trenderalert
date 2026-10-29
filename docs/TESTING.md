@@ -19,18 +19,20 @@ No unit or component test runner is configured yet. The recommended setup when m
 2. Open `/admin/login`. The standalone sign-in layout shows.
 3. Sign in. The admin shell shows. No public header.
 
-### Demo sign-in and session
+### Sign-in and session
 
-1. On `/admin/login`, account skeletons appear briefly, then five accounts.
-2. Select an account and choose **Enter demo portal**. You land on `/admin/dashboard`.
+Requires `TRENDERALERT_API_URL` in `.env.local` and the backend running. Use the administrator credentials supplied by the backend team.
+
+1. On `/admin/login`, a wrong password shows "Incorrect email or password."
+2. Valid credentials land on `/admin/dashboard` with that role's navigation. `document.cookie` does not show `ta_access` or `ta_refresh` (httpOnly).
 3. Refresh. You stay signed in.
-4. Open `/admin/users` in a fresh browser profile. You are redirected to `/admin/login?next=%2Fadmin%2Fusers`, and after sign-in you return to `/admin/users`.
-5. **Sign out of demo** returns you to the sign-in page.
+4. **Sign out** returns to the sign-in page; opening `/admin/dashboard` then redirects to `/admin/login?next=%2Fadmin%2Fdashboard`.
+5. Stop the backend and sign in: "The sign-in service could not be reached."
 
 ### Role permissions
 
 1. Sign in as Super Administrator. All sidebar sections show.
-2. Switch to Finance Administrator from the profile menu. Only Dashboard, Contests, Subscriptions and Finance remain. A success message confirms the switch.
+2. Sign out and sign in as the Finance Administrator. Only Dashboard, Contests, Subscriptions and Finance remain.
 3. While on `/admin/users/u-1042` as Finance Administrator, the page shows "Not available for your role".
 4. Repeat for each role and compare with the matrix in [AUTHENTICATION_AND_ROLES.md](AUTHENTICATION_AND_ROLES.md).
 
@@ -44,7 +46,6 @@ No unit or component test runner is configured yet. The recommended setup when m
 ### Loading and error states
 
 1. Set `NEXT_PUBLIC_MOCK_DELAY_MS=2500` in `.env.local` and restart. Sign-in skeletons stay visible longer.
-2. Set `NEXT_PUBLIC_MOCK_FAIL_SERVICES=auth` and restart. The sign-in page shows "Demo accounts could not be loaded" with **Try again**.
 
 ### Dashboard and alerts (Phase 4)
 

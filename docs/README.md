@@ -15,7 +15,7 @@ This folder documents the TrenderAlert frontend: the public website at `/` and t
 | [REDUX_STATE_MANAGEMENT.md](REDUX_STATE_MANAGEMENT.md)     | Store, slices, async thunks, persistence                                |
 | [MOCK_DATA_GUIDE.md](MOCK_DATA_GUIDE.md)                   | Where mock data lives and how to extend it                              |
 | [MOCK_API_INTEGRATION.md](MOCK_API_INTEGRATION.md)         | Mock service layer and how to swap in real APIs                         |
-| [AUTHENTICATION_AND_ROLES.md](AUTHENTICATION_AND_ROLES.md) | Demo accounts, roles, permission map                                    |
+| [AUTHENTICATION_AND_ROLES.md](AUTHENTICATION_AND_ROLES.md) | Backend sign-in flow, role resolution, permission map                   |
 | [SECURITY.md](SECURITY.md)                                 | Demo limitations and production security requirements                   |
 | [TESTING.md](TESTING.md)                                   | Checks to run and manual verification steps                             |
 | [DEVELOPMENT_GUIDELINES.md](DEVELOPMENT_GUIDELINES.md)     | Conventions for code, styling, state and docs                           |

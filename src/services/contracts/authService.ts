@@ -1,12 +1,13 @@
-import type { AdminRole, DemoAdminAccount } from "@/types/auth";
+import type { AdminIdentity, SignInCredentials } from "@/types/auth";
 
 /**
- * Contract shared by the mock implementation and the future backend implementation.
- * Production sign-in will replace `signInDemo` with a credential or SSO flow (proposed, not final).
+ * Administrator authentication. Implemented by `services/api/authService.ts`, which calls the
+ * app's own `/api/auth/*` route handlers; those talk to the backend and hold the tokens in
+ * httpOnly cookies.
  */
 export interface AuthService {
-  listDemoAccounts(): Promise<DemoAdminAccount[]>;
-  signInDemo(accountId: string): Promise<DemoAdminAccount>;
-  getDemoAccountForRole(role: AdminRole): Promise<DemoAdminAccount>;
-  restoreDemoSession(accountId: string): Promise<DemoAdminAccount>;
+  signIn(credentials: SignInCredentials): Promise<AdminIdentity>;
+  /** Returns the current administrator, or null when no valid session exists. */
+  getSession(): Promise<AdminIdentity | null>;
+  signOut(): Promise<void>;
 }

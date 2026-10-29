@@ -1,18 +1,13 @@
 import type { AsyncStatus, ServiceError } from "@/types/api";
-import type { DemoAdminAccount } from "@/types/auth";
+import type { AdminIdentity } from "@/types/auth";
 
 export interface AuthState {
-  currentAdmin: DemoAdminAccount | null;
-  /** True once any saved demo session has been checked on the client. */
+  currentAdmin: AdminIdentity | null;
+  /** True once the server session has been checked on the client. */
   sessionRestored: boolean;
+  /** Set when the session check failed for a reason other than "signed out". */
+  sessionError: ServiceError | null;
   signInStatus: AsyncStatus;
   signInError: ServiceError | null;
-  roleSwitchStatus: AsyncStatus;
-  demoAccounts: DemoAdminAccount[];
-  demoAccountsStatus: AsyncStatus;
-  demoAccountsError: ServiceError | null;
-}
-
-export interface DemoSessionSnapshot {
-  accountId: string;
+  signOutStatus: AsyncStatus;
 }

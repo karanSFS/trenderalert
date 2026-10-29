@@ -32,7 +32,21 @@ export type Permission =
   | "security:manage-admins"
   | "audit:view";
 
-/** Fictional administrator used only by the demo sign-in. Contains no credentials. */
+/** The signed-in administrator as returned by the session endpoints. Never contains tokens. */
+export interface AdminIdentity {
+  id: EntityId;
+  displayName: string;
+  email: string;
+  username: string;
+  role: AdminRole;
+}
+
+export interface SignInCredentials {
+  email: string;
+  password: string;
+}
+
+/** Fictional administrator in the demo directory data. Contains no credentials. */
 export interface DemoAdminAccount {
   id: EntityId;
   displayName: string;

@@ -2,18 +2,17 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Provider } from "react-redux";
-import { restoreDemoSession } from "@/features/auth/authSlice";
-import type { DemoSessionSnapshot } from "@/features/auth/authTypes";
+import { restoreSession } from "@/features/auth/authSlice";
 import { setSidebarCollapsed, type LayoutState } from "@/features/settings/layoutSlice";
 import { restoreTheme } from "@/features/settings/themeSlice";
-import { STORAGE_KEYS } from "@/lib/constants/app";
+import { LEGACY_STORAGE_KEYS, STORAGE_KEYS } from "@/lib/constants/app";
 import { THEME_STORAGE_KEY, type ThemePreference } from "@/styles/themes";
 import { makeStore, type AppStore } from "@/store";
-import { readJson } from "@/store/persistence";
+import { readJson, removeLegacyKeys } from "@/store/persistence";
 
 /**
- * Creates one store per browser session (and per request on the server). Saved preferences are
- * restored after mount so the server and first client render always match.
+ * Creates one store per browser session (and per request on the server). Saved preferences and
+ * the server session are restored after mount so the server and first client render match.
  */
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [store] = useState<AppStore>(() => makeStore());
@@ -24,8 +23,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (typeof layout?.sidebarCollapsed === "boolean") {
       store.dispatch(setSidebarCollapsed(layout.sidebarCollapsed));
     }
-    const session = readJson<DemoSessionSnapshot>(STORAGE_KEYS.demoSession);
-    store.dispatch(restoreDemoSession(session?.accountId ?? null));
+    removeLegacyKeys(LEGACY_STORAGE_KEYS);
+    store.dispatch(restoreSession());
   }, [store]);
 
   return <Provider store={store}>{children}</Provider>;

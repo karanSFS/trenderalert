@@ -43,14 +43,17 @@ Copy `.env.example` to `.env.local` and restart the dev server after changing va
 
 ## Contracts
 
-### AuthService (Phase 1)
+### AuthService (connected to the backend)
 
-| Method                          | Returns              | Notes                                                                |
-| ------------------------------- | -------------------- | -------------------------------------------------------------------- |
-| `listDemoAccounts()`            | `DemoAdminAccount[]` | Demo only. Removed in production                                     |
-| `signInDemo(accountId)`         | `DemoAdminAccount`   | Demo only. Production replaces it with a real credential or SSO flow |
-| `getDemoAccountForRole(role)`   | `DemoAdminAccount`   | Demo role switcher only                                              |
-| `restoreDemoSession(accountId)` | `DemoAdminAccount`   | Production would validate a server session instead                   |
+Implemented by `services/api/authService.ts`, which calls the app's own route handlers. The route handlers call the backend with `src/server/backendAuth.ts`.
+
+| Method                | Route handler           | Backend calls                                                                   |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------------- |
+| `signIn(credentials)` | `POST /api/auth/login`  | `POST /api/v1/auth/login`, then role resolution                                 |
+| `getSession()`        | `GET /api/auth/session` | `POST /api/v1/auth/refresh` when needed, `GET /api/v1/auth/me`, role resolution |
+| `signOut()`           | `POST /api/auth/logout` | `POST /api/v1/auth/logout`                                                      |
+
+Responses never include tokens. Errors use the same `{ code, message }` shape as the mock services. Configure the backend with `TRENDERALERT_API_URL` in `.env.local` (server-only).
 
 ### DashboardService (Phase 4)
 
@@ -136,7 +139,6 @@ Proposed production endpoints are **not defined**. Final URLs, authentication sc
 
 ## Authentication integration points
 
-- `services/index.ts`: swap `authService`.
+- `services/index.ts`: `authService` already points at the API implementation.
 - `features/auth/authSlice.ts`: thunks already handle loading, success and failure.
-- `store/persistence.ts`: remove `ta.demoSession` persistence once server sessions exist.
 - `components/layout/AdminLayout.tsx`: the session guard reads `sessionRestored` and `currentAdmin`. A server session check would set the same state.

@@ -23,7 +23,7 @@
 | `supportCases.ts` | 34 `SupportCase` records (`sup-3301`…`sup-3334`), support agents, `maskEmail` | 6 |
 | `discovery.ts` | `DiscoveryConfig`: markets, featured locations, sources, freshness, relevance, ranking proposal | 6 |
 | `configuration.ts` | `ConfigurationData`: settings, announcements, policy versions, feature flags with gates | 6 |
-| `adminDirectory.ts` | 11 `AdminAccount` records (the five demo sign-ins plus colleagues) | 6 |
+| `adminDirectory.ts` | 11 `AdminAccount` records (five per-role demo administrators plus colleagues; not used for sign-in) | 6 |
 | `operations.ts` | Simulated operations snapshot (objectives, queues, incidents, maintenance) | 6 |
 
 ### Relationships (Phase 5)

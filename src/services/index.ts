@@ -1,3 +1,4 @@
+import { apiAuthService } from "./api/authService";
 import type { AuditService } from "./contracts/auditService";
 import type { AuthService } from "./contracts/authService";
 import type { DashboardService } from "./contracts/dashboardService";
@@ -25,7 +26,6 @@ import { mockAdminUsersService } from "./mock/adminUsersService";
 import { mockAppealsService } from "./mock/appealsService";
 import { mockAuditLogService } from "./mock/auditLogService";
 import { mockAuditService } from "./mock/auditService";
-import { mockAuthService } from "./mock/authService";
 import { mockConfigurationService } from "./mock/configurationService";
 import { mockContentService } from "./mock/contentService";
 import { mockContestsService } from "./mock/contestsService";
@@ -45,7 +45,7 @@ import { mockUsersService } from "./mock/usersService";
  * Service registry. Redux thunks import services from here, never from `mock/` directly,
  * so a backend implementation can be swapped in without touching slices or components.
  */
-export const authService: AuthService = mockAuthService;
+export const authService: AuthService = apiAuthService;
 export const auditService: AuditService = mockAuditService;
 export const dashboardService: DashboardService = mockDashboardService;
 export const usersService: UsersService = mockUsersService;

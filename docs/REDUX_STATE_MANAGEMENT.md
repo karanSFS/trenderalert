@@ -9,14 +9,14 @@
 
 ## Slices
 
-| Key             | File                                           | State                                                                                                                                    |
-| --------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `auth`          | `features/auth/authSlice.ts`                   | Current demo admin, session restored flag, sign-in status and error, role-switch status, demo account list with its own status and error |
-| `theme`         | `features/settings/themeSlice.ts`              | Preset, mode, restored flag                                                                                                              |
-| `layout`        | `features/settings/layoutSlice.ts`             | Sidebar collapsed                                                                                                                        |
-| `audit`         | `features/audit/auditSlice.ts`                 | Demo audit events recorded this session (newest first), record status and error                                                          |
-| `dashboard`     | `features/dashboard/dashboardSlice.ts`         | Selected range, summary, status, error, last loaded time, latest request id (older responses are ignored)                                |
-| `notifications` | `features/notifications/notificationsSlice.ts` | Alerts, status, error, ids read this session                                                                                             |
+| Key             | File                                           | State                                                                                                                 |
+| --------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `auth`          | `features/auth/authSlice.ts`                   | Signed-in admin identity (no tokens), session restored flag, session error, sign-in status and error, sign-out status |
+| `theme`         | `features/settings/themeSlice.ts`              | Preset, mode, restored flag                                                                                           |
+| `layout`        | `features/settings/layoutSlice.ts`             | Sidebar collapsed                                                                                                     |
+| `audit`         | `features/audit/auditSlice.ts`                 | Demo audit events recorded this session (newest first), record status and error                                       |
+| `dashboard`     | `features/dashboard/dashboardSlice.ts`         | Selected range, summary, status, error, last loaded time, latest request id (older responses are ignored)             |
+| `notifications` | `features/notifications/notificationsSlice.ts` | Alerts, status, error, ids read this session                                                                          |
 
 Module slices, one per domain (there is no single application-wide slice):
 
@@ -131,19 +131,20 @@ Small reference lists that are not module state (support agents for the assignee
 Async work uses `createAsyncThunk` and calls the service registry (`src/services/index.ts`), never mock data directly.
 
 ```ts
-export const signInDemo = createAsyncThunk<DemoAdminAccount, string, { rejectValue: ServiceError }>(
-  "auth/signInDemo",
-  async (accountId, { rejectWithValue }) => {
-    try {
-      return await authService.signInDemo(accountId);
-    } catch (error) {
-      return rejectWithValue(toServiceError(error));
-    }
-  },
-);
+export const signIn = createAsyncThunk<
+  AdminIdentity,
+  SignInCredentials,
+  { rejectValue: ServiceError }
+>("auth/signIn", async (credentials, { rejectWithValue }) => {
+  try {
+    return await authService.signIn(credentials);
+  } catch (error) {
+    return rejectWithValue(toServiceError(error));
+  }
+});
 ```
 
-Auth thunks: `fetchDemoAccounts`, `signInDemo`, `switchDemoRole`, `restoreDemoSession`.
+Auth thunks: `signIn`, `restoreSession`, `signOut` (always clears the local session).
 
 ## Loading and error states
 
@@ -157,13 +158,12 @@ Selectors live in `<domain>Selectors.ts` (for example `selectCurrentAdmin`, `sel
 
 `src/store/persistence.ts` uses RTK `createListenerMiddleware`:
 
-| Actions                        | Saved to `localStorage`                           |
-| ------------------------------ | ------------------------------------------------- |
-| theme changes                  | `ta.theme` `{ preset, mode }`                     |
-| sidebar toggle                 | `ta.layout` `{ sidebarCollapsed }`                |
-| sign in, role switch, sign out | `ta.demoSession` `{ accountId }` (no credentials) |
+| Actions        | Saved to `localStorage`            |
+| -------------- | ---------------------------------- |
+| theme changes  | `ta.theme` `{ preset, mode }`      |
+| sidebar toggle | `ta.layout` `{ sidebarCollapsed }` |
 
-Restoration happens once in `StoreProvider` after mount, so server and client renders always start from the same initial state.
+The admin session is not stored in `localStorage`; it lives in httpOnly cookies and is checked with `restoreSession()`. Restoration happens once in `StoreProvider` after mount, so server and client renders always start from the same initial state.
 
 ## Redux or local state?
 

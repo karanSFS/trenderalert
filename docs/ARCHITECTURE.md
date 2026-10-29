@@ -14,7 +14,7 @@ src/app/
   admin/
     layout.tsx               Admin metadata (title template, noindex)
     page.tsx                 Redirects to /admin/dashboard
-    login/page.tsx           Demo sign-in, outside the admin shell
+    login/page.tsx           Backend sign-in, outside the admin shell
     (portal)/                Route group wrapped by the admin shell
       layout.tsx             AdminLayout (sidebar, header, guards)
       loading.tsx            Page skeleton during navigation

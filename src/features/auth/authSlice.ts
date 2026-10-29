@@ -2,76 +2,55 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { authService } from "@/services";
 import { toServiceError } from "@/services/mock/mockDelay";
 import type { ServiceError } from "@/types/api";
-import type { AdminRole, DemoAdminAccount } from "@/types/auth";
+import type { AdminIdentity, SignInCredentials } from "@/types/auth";
 import type { AuthState } from "./authTypes";
 
 const initialState: AuthState = {
   currentAdmin: null,
   sessionRestored: false,
+  sessionError: null,
   signInStatus: "idle",
   signInError: null,
-  roleSwitchStatus: "idle",
-  demoAccounts: [],
-  demoAccountsStatus: "idle",
-  demoAccountsError: null,
+  signOutStatus: "idle",
 };
 
 type ThunkConfig = { rejectValue: ServiceError };
 
-export const fetchDemoAccounts = createAsyncThunk<DemoAdminAccount[], void, ThunkConfig>(
-  "auth/fetchDemoAccounts",
+export const signIn = createAsyncThunk<AdminIdentity, SignInCredentials, ThunkConfig>(
+  "auth/signIn",
+  async (credentials, { rejectWithValue }) => {
+    try {
+      return await authService.signIn(credentials);
+    } catch (error) {
+      return rejectWithValue(toServiceError(error));
+    }
+  },
+);
+
+export const restoreSession = createAsyncThunk<AdminIdentity | null, void, ThunkConfig>(
+  "auth/restoreSession",
   async (_, { rejectWithValue }) => {
     try {
-      return await authService.listDemoAccounts();
+      return await authService.getSession();
     } catch (error) {
       return rejectWithValue(toServiceError(error));
     }
   },
 );
 
-export const signInDemo = createAsyncThunk<DemoAdminAccount, string, ThunkConfig>(
-  "auth/signInDemo",
-  async (accountId, { rejectWithValue }) => {
-    try {
-      return await authService.signInDemo(accountId);
-    } catch (error) {
-      return rejectWithValue(toServiceError(error));
-    }
-  },
-);
-
-export const switchDemoRole = createAsyncThunk<DemoAdminAccount, AdminRole, ThunkConfig>(
-  "auth/switchDemoRole",
-  async (role, { rejectWithValue }) => {
-    try {
-      return await authService.getDemoAccountForRole(role);
-    } catch (error) {
-      return rejectWithValue(toServiceError(error));
-    }
-  },
-);
-
-export const restoreDemoSession = createAsyncThunk<DemoAdminAccount | null, string | null>(
-  "auth/restoreDemoSession",
-  async (accountId) => {
-    if (!accountId) return null;
-    try {
-      return await authService.restoreDemoSession(accountId);
-    } catch {
-      return null;
-    }
-  },
-);
+/** Clears the local session even when the backend revocation fails. */
+export const signOut = createAsyncThunk<void, void>("auth/signOut", async () => {
+  try {
+    await authService.signOut();
+  } catch {
+    // The cookies may already be gone; the local session is cleared regardless.
+  }
+});
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    signOut(state) {
-      state.currentAdmin = null;
-      state.signInStatus = "idle";
-      state.signInError = null;
-    },
     clearSignInError(state) {
       state.signInError = null;
       if (state.signInStatus === "failed") state.signInStatus = "idle";
@@ -79,52 +58,41 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchDemoAccounts.pending, (state) => {
-        state.demoAccountsStatus = "loading";
-        state.demoAccountsError = null;
-      })
-      .addCase(fetchDemoAccounts.fulfilled, (state, action) => {
-        state.demoAccountsStatus = "succeeded";
-        state.demoAccounts = action.payload;
-      })
-      .addCase(fetchDemoAccounts.rejected, (state, action) => {
-        state.demoAccountsStatus = "failed";
-        state.demoAccountsError = action.payload ?? {
-          code: "UNKNOWN",
-          message: "Could not load demo accounts.",
-        };
-      })
-      .addCase(signInDemo.pending, (state) => {
+      .addCase(signIn.pending, (state) => {
         state.signInStatus = "loading";
         state.signInError = null;
       })
-      .addCase(signInDemo.fulfilled, (state, action) => {
+      .addCase(signIn.fulfilled, (state, action) => {
         state.signInStatus = "succeeded";
         state.currentAdmin = action.payload;
+        state.sessionRestored = true;
+        state.sessionError = null;
       })
-      .addCase(signInDemo.rejected, (state, action) => {
+      .addCase(signIn.rejected, (state, action) => {
         state.signInStatus = "failed";
-        state.signInError = action.payload ?? { code: "UNKNOWN", message: "Demo sign-in failed." };
+        state.signInError = action.payload ?? { code: "UNKNOWN", message: "Sign-in failed." };
       })
-      .addCase(switchDemoRole.pending, (state) => {
-        state.roleSwitchStatus = "loading";
-      })
-      .addCase(switchDemoRole.fulfilled, (state, action) => {
-        state.roleSwitchStatus = "succeeded";
-        state.currentAdmin = action.payload;
-      })
-      .addCase(switchDemoRole.rejected, (state) => {
-        state.roleSwitchStatus = "failed";
-      })
-      .addCase(restoreDemoSession.fulfilled, (state, action) => {
+      .addCase(restoreSession.fulfilled, (state, action) => {
         state.currentAdmin = action.payload;
         state.sessionRestored = true;
+        state.sessionError = null;
       })
-      .addCase(restoreDemoSession.rejected, (state) => {
+      .addCase(restoreSession.rejected, (state, action) => {
+        state.currentAdmin = null;
         state.sessionRestored = true;
+        state.sessionError = action.payload ?? null;
+      })
+      .addCase(signOut.pending, (state) => {
+        state.signOutStatus = "loading";
+      })
+      .addCase(signOut.fulfilled, (state) => {
+        state.signOutStatus = "idle";
+        state.currentAdmin = null;
+        state.signInStatus = "idle";
+        state.signInError = null;
       });
   },
 });
 
-export const { signOut, clearSignInError } = authSlice.actions;
+export const { clearSignInError } = authSlice.actions;
 export default authSlice.reducer;
